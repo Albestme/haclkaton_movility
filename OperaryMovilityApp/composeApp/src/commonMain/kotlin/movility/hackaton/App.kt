@@ -2,6 +2,7 @@ package movility.hackaton
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -95,7 +96,10 @@ fun App() {
             modifier = Modifier.safeContentPadding(),
             bottomBar = {
                 if (activeTaskSession == null) {
-                    NavigationBar {
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 6.dp,
+                    ) {
                         AppTab.entries.forEach { tab ->
                             NavigationBarItem(
                                 selected = selectedTab == tab,
@@ -188,6 +192,7 @@ private fun RouteTabContent(
 ) {
     val filteredTasks = filterTasksByType(tasks, selectedTypeFilter)
     val visibleTasks = sortTasks(filteredTasks, selectedSortOption)
+    val taskListState = rememberLazyListState()
     val pendingCount = tasks.count { !it.isDone }
     val visiblePendingCount = visibleTasks.count { !it.isDone }
     val completedCount = tasks.size - pendingCount
@@ -210,39 +215,60 @@ private fun RouteTabContent(
                 totalCount = tasks.size,
             )
 
-            Text(
-                text = "Tipo de tarea",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TaskTypeFilterDropdown(
-                selectedType = selectedTypeFilter,
-                onTypeSelected = onTypeFilterChange,
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = "Tipo de tarea",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    TaskTypeFilterDropdown(
+                        selectedType = selectedTypeFilter,
+                        onTypeSelected = onTypeFilterChange,
+                    )
 
-            Text(
-                text = "Orden",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TaskSortRow(
-                selectedSortOption = selectedSortOption,
-                onSortSelected = onSortOptionChange,
-            )
+                    Text(
+                        text = "Orden",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    TaskSortRow(
+                        selectedSortOption = selectedSortOption,
+                        onSortSelected = onSortOptionChange,
+                    )
+                }
+            }
 
             AnimatedContent(targetState = visibleTasks, label = "tasks-filter-animation") { tasksForView ->
-                val taskListState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    state = taskListState,
-                ) {
-                    items(items = tasksForView, key = { it.id }) { task ->
-                        RouteTaskRow(
-                            task = task,
-                            onTaskChecked = { checked -> onTaskChecked(task, checked) },
-                            onTaskClick = { onTaskClick(task) },
-                        )
+                if (tasksForView.isEmpty()) {
+                    RouteEmptyState(
+                        modifier = Modifier.fillMaxSize(),
+                        selectedTypeFilter = selectedTypeFilter,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        state = taskListState,
+                    ) {
+                        items(items = tasksForView, key = { it.id }) { task ->
+                            RouteTaskRow(
+                                task = task,
+                                onTaskChecked = { checked -> onTaskChecked(task, checked) },
+                                onTaskClick = { onTaskClick(task) },
+                            )
+                        }
                     }
                 }
             }
@@ -280,11 +306,21 @@ private fun TechniciansTabContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            TechniciansRealMap(
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                technicians = technicians,
-                onTechnicianClick = { selectedTechnicianByMap = it },
-            )
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+            ) {
+                TechniciansRealMap(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    technicians = technicians,
+                    onTechnicianClick = { selectedTechnicianByMap = it },
+                )
+            }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -298,6 +334,7 @@ private fun TechniciansTabContent(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                         ),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     ) {
                         Column(
                             modifier = Modifier
@@ -312,10 +349,16 @@ private fun TechniciansTabContent(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { onCallTechnician(technician) }) {
+                                Button(
+                                    onClick = { onCallTechnician(technician) },
+                                    modifier = Modifier.weight(1f),
+                                ) {
                                     Text("Llamar")
                                 }
-                                OutlinedButton(onClick = { onOpenTechnicianLocation(technician) }) {
+                                OutlinedButton(
+                                    onClick = { onOpenTechnicianLocation(technician) },
+                                    modifier = Modifier.weight(1f),
+                                ) {
                                     Text("Ver en mapa")
                                 }
                             }
@@ -415,6 +458,7 @@ private fun ActiveTaskScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                 ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
             ) {
                 Column(
                     modifier = Modifier
@@ -441,6 +485,7 @@ private fun ActiveTaskScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                 ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
             ) {
                 Text(
                     text = if (isReportGenerated) {
@@ -641,8 +686,9 @@ private fun HeaderSummary(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -668,6 +714,39 @@ private fun HeaderSummary(
 }
 
 @Composable
+private fun RouteEmptyState(modifier: Modifier, selectedTypeFilter: TaskType?) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "No hay tareas para mostrar",
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = if (selectedTypeFilter == null) {
+                    "Prueba otro orden o revisa nuevamente mas tarde."
+                } else {
+                    "El filtro de ${selectedTypeFilter.label} no tiene tareas activas."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
 private fun TaskSortRow(selectedSortOption: TaskSortOption, onSortSelected: (TaskSortOption) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(TaskSortOption.entries) { sortOption ->
@@ -675,6 +754,7 @@ private fun TaskSortRow(selectedSortOption: TaskSortOption, onSortSelected: (Tas
                 selected = selectedSortOption == sortOption,
                 onClick = { onSortSelected(sortOption) },
                 label = { Text(sortOption.label) },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
             )
         }
     }
@@ -689,7 +769,7 @@ private fun TaskTypeFilterDropdown(selectedType: TaskType?, onTypeSelected: (Tas
             onClick = { expanded = true },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = selectedType?.label ?: "Todos")
+            Text(text = "Tipo: ${selectedType?.label ?: "Todos"}")
         }
 
         DropdownMenu(
@@ -718,6 +798,10 @@ private fun TaskTypeFilterDropdown(selectedType: TaskType?, onTypeSelected: (Tas
 
 @Composable
 private fun RouteTaskRow(task: RouteTask, onTaskChecked: (Boolean) -> Unit, onTaskClick: () -> Unit) {
+    val animatedElevation by animateDpAsState(
+        targetValue = if (task.isDone) 1.dp else 4.dp,
+        label = "task-elevation",
+    )
     val animatedContainerColor by animateColorAsState(
         targetValue = if (task.isDone) {
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
@@ -741,6 +825,7 @@ private fun RouteTaskRow(task: RouteTask, onTaskChecked: (Boolean) -> Unit, onTa
             .clickable(onClick = onTaskClick),
         colors = CardDefaults.cardColors(containerColor = animatedContainerColor),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = animatedElevation),
     ) {
         Row(
             modifier = Modifier
@@ -766,8 +851,13 @@ private fun RouteTaskRow(task: RouteTask, onTaskChecked: (Boolean) -> Unit, onTa
                     color = animatedTextColor,
                 )
                 Text(
-                    text = "${task.scheduledTime} - ${task.address}",
+                    text = task.scheduledTime,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = task.address,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
