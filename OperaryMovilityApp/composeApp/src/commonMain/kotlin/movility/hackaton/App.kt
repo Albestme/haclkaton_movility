@@ -40,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 private enum class AppTab(val label: String) {
     RUTA("Ruta"),
@@ -74,6 +76,7 @@ fun App() {
         var selectedSortOptionName by rememberSaveable { mutableStateOf(TaskSortOption.PRIORIDAD.name) }
         var selectedTask by remember { mutableStateOf<RouteTask?>(null) }
         var selectedTabName by rememberSaveable { mutableStateOf(AppTab.RUTA.name) }
+        var activeTaskSession by remember { mutableStateOf<ActiveTaskSession?>(null) }
 
         val selectedTypeFilter = selectedTypeFilterName?.let { name -> TaskType.entries.firstOrNull { it.name == name } }
         val selectedSortOption = TaskSortOption.entries.firstOrNull { it.name == selectedSortOptionName }
@@ -90,49 +93,66 @@ fun App() {
         Scaffold(
             modifier = Modifier.safeContentPadding(),
             bottomBar = {
-                NavigationBar {
-                    AppTab.entries.forEach { tab ->
-                        NavigationBarItem(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTabName = tab.name },
-                            icon = {
-                                val icon = when (tab) {
-                                    AppTab.RUTA -> Icons.Default.Home
-                                    AppTab.TECNICOS -> Icons.Default.People
-                                    AppTab.MENSAJES -> Icons.AutoMirrored.Filled.Message
-                                }
-                                Icon(imageVector = icon, contentDescription = tab.label)
-                            },
-                            label = { Text(tab.label) },
-                        )
+                if (activeTaskSession == null) {
+                    NavigationBar {
+                        AppTab.entries.forEach { tab ->
+                            NavigationBarItem(
+                                selected = selectedTab == tab,
+                                onClick = { selectedTabName = tab.name },
+                                icon = {
+                                    val icon = when (tab) {
+                                        AppTab.RUTA -> Icons.Default.Home
+                                        AppTab.TECNICOS -> Icons.Default.People
+                                        AppTab.MENSAJES -> Icons.AutoMirrored.Filled.Message
+                                    }
+                                    Icon(imageVector = icon, contentDescription = tab.label)
+                                },
+                                label = { Text(tab.label) },
+                            )
+                        }
                     }
                 }
             },
         ) { innerPadding ->
-            when (selectedTab) {
-                AppTab.RUTA -> RouteTabContent(
-                    modifier = Modifier.padding(innerPadding),
-                    tasks = tasks,
-                    selectedTypeFilter = selectedTypeFilter,
-                    selectedSortOption = selectedSortOption,
-                    onTypeFilterChange = { selectedTypeFilterName = it?.name },
-                    onSortOptionChange = { selectedSortOptionName = it.name },
-                    onTaskChecked = { task, isChecked ->
-                        doneTaskIds = updateDoneTaskIds(doneTaskIds, task.id, isChecked)
-                    },
-                    onTaskClick = { selectedTask = it },
-                )
+            if (activeTaskSession != null) {
+                val sessionTask = tasks.firstOrNull { it.id == activeTaskSession?.taskId }
+                if (sessionTask != null) {
+                    ActiveTaskScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        task = sessionTask,
+                        onFinishTask = {
+                            doneTaskIds = updateDoneTaskIds(doneTaskIds, sessionTask.id, true)
+                            activeTaskSession = null
+                        },
+                        onOpenGps = { uriHandler.openUri(googleMapsNavigationUrl(sessionTask.address)) },
+                    )
+                }
+            } else {
+                when (selectedTab) {
+                    AppTab.RUTA -> RouteTabContent(
+                        modifier = Modifier.padding(innerPadding),
+                        tasks = tasks,
+                        selectedTypeFilter = selectedTypeFilter,
+                        selectedSortOption = selectedSortOption,
+                        onTypeFilterChange = { selectedTypeFilterName = it?.name },
+                        onSortOptionChange = { selectedSortOptionName = it.name },
+                        onTaskChecked = { task, isChecked ->
+                            doneTaskIds = updateDoneTaskIds(doneTaskIds, task.id, isChecked)
+                        },
+                        onTaskClick = { selectedTask = it },
+                    )
 
-                AppTab.TECNICOS -> TechniciansTabContent(
-                    modifier = Modifier.padding(innerPadding),
-                    technicians = technicians,
-                    onCallTechnician = { technician -> uriHandler.openUri(phoneDialUri(technician.phone)) },
-                    onOpenTechnicianLocation = { technician ->
-                        uriHandler.openUri(googleMapsPinUrl(technician.latitude, technician.longitude, technician.name))
-                    },
-                )
+                    AppTab.TECNICOS -> TechniciansTabContent(
+                        modifier = Modifier.padding(innerPadding),
+                        technicians = technicians,
+                        onCallTechnician = { technician -> uriHandler.openUri(phoneDialUri(technician.phone)) },
+                        onOpenTechnicianLocation = { technician ->
+                            uriHandler.openUri(googleMapsPinUrl(technician.latitude, technician.longitude, technician.name))
+                        },
+                    )
 
-                AppTab.MENSAJES -> MessagesTabContent(modifier = Modifier.padding(innerPadding))
+                    AppTab.MENSAJES -> MessagesTabContent(modifier = Modifier.padding(innerPadding))
+                }
             }
 
             selectedTask?.let { task ->
@@ -140,7 +160,7 @@ fun App() {
                     task = task,
                     onDismiss = { selectedTask = null },
                     onStartTask = {
-                        uriHandler.openUri(googleMapsNavigationUrl(task.address))
+                        activeTaskSession = startTaskSession(task)
                         selectedTask = null
                     },
                     onTaskTypeChanged = { newType ->
@@ -335,6 +355,132 @@ private fun TechniciansTabContent(
         }
     }
 }
+
+@Composable
+private fun ActiveTaskScreen(
+    modifier: Modifier,
+    task: RouteTask,
+    onFinishTask: () -> Unit,
+    onOpenGps: () -> Unit,
+) {
+    var elapsedSeconds by remember { mutableStateOf(0) }
+    var isGeneratingReport by remember { mutableStateOf(false) }
+    var isReportGenerated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(task.id) {
+        while (true) {
+            delay(1_000)
+            elapsedSeconds += 1
+        }
+    }
+
+    LaunchedEffect(isGeneratingReport) {
+        if (isGeneratingReport) {
+            delay(2_000)
+            isGeneratingReport = false
+            isReportGenerated = true
+        }
+    }
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = "Tarea en curso",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = task.siteName,
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Text(
+                text = task.address,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = formatElapsedTime(elapsedSeconds),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Cronometro activo",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                ),
+            ) {
+                Text(
+                    text = if (isReportGenerated) {
+                        "Informe generado correctamente. Ya puedes finalizar la tarea."
+                    } else {
+                        "Debes generar informe antes de finalizar la tarea."
+                    },
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            OutlinedButton(
+                onClick = onOpenGps,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Abrir GPS")
+            }
+
+            OutlinedButton(
+                onClick = { isGeneratingReport = true },
+                enabled = !isGeneratingReport && !isReportGenerated,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (isGeneratingReport) "Generando informe..."
+                    else if (isReportGenerated) "Informe generado"
+                    else "Generar informe",
+                )
+            }
+
+            Button(
+                onClick = onFinishTask,
+                enabled = isReportGenerated,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Finalizar tarea")
+            }
+        }
+    }
+}
+
 
 
 @Composable
