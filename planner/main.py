@@ -4,12 +4,15 @@ import time
 from collections import defaultdict
 import csv
 import requests
+import numpy as np
 
 # =========================
 # CONFIGURATION PARAMETERS
 # =========================
 
 WORK_START = 8 * 60  # 08:00 = 480 minutes
+EVOLUTION_ITER = 30
+EVOLUTION_SIZE = 14
 
 def default_params():
     return {
@@ -19,8 +22,9 @@ def default_params():
         "travel_weight": 0.8,
         "aging_factor": 0.05,
         "exploration_factor": 1.1,
-        "num_simulations": 10000,
-        "num_simulations_local": 500,
+        "num_simulations": 20,
+        "num_simulations_local": 450,
+        "budget": 50,
         "radius": 60.0,  # distance threshold in minutes
         "freeze_window": 30,  # minutes
         "critical_threshold": 3,
@@ -49,6 +53,37 @@ class Worker:
         self.lat = lat
         self.lon = lon
         self.route = []
+
+class PolicyModel:
+    def __init__(self):
+        self.weights = {
+            "priority": 1.5,
+            "travel": -1.0,
+            "waiting": 0.3,
+        }
+
+    def features(self, task, travel, current_time):
+        waiting = current_time - task.created_at
+        return {
+            "priority": task.priority,
+            "travel": travel,
+            "waiting": waiting,
+        }
+
+    def score(self, task, travel, current_time):
+        f = self.features(task, travel, current_time)
+        return sum(self.weights[k] * f[k] for k in f)
+
+    def update(self, elite_data, lr=0.01):
+        # elite_data = list of (features, reward)
+        grad = {k: 0.0 for k in self.weights}
+
+        for f, reward in elite_data:
+            for k in grad:
+                grad[k] += f[k] * reward
+
+        for k in self.weights:
+            self.weights[k] += lr * grad[k] / len(elite_data)
 
 # =========================
 # UTILS
@@ -127,39 +162,54 @@ def travel_time(a, b, t):
 def effective_priority(task, current_time, params):
     waiting = current_time - task.created_at
     if task.priority >= params["critical_threshold"]:
-        return task.priority
+        return task.priority + waiting
     return task.priority + params["aging_factor"] * waiting
 
 
-def selection_score(task, travel, current_time, params):
-    priority = effective_priority(task, current_time, params)
+def pick_task(candidates):
+    scores = np.array([c[1] for c in candidates])
+    max_score = np.max(scores)  # Find the max score
+    stabilized_scores = scores - max_score  # Subtract max for numerical stability
+    exp_scores = np.exp(stabilized_scores)
+    probs = exp_scores / np.sum(exp_scores)
+    idx = np.random.choice(len(candidates), p=probs)
+    return candidates[idx]
+
+
+def selection_score(task, travel, current_time, params, policy):
+    base = policy.score(task, travel, current_time)
     noise = random.random() * params["exploration_factor"]
-    return params["priority_weight"] * priority - params["travel_weight"] * travel + noise
+    return base + noise
 
 # =========================
 # MONTE CARLO SIMULATION
 # =========================
 
-def simulate_solution(workers, tasks, params):
+def simulate_solution(workers, tasks, params, policy, collect=False):
     remaining = tasks[:]
+    trajectory = []
     solution = {w.id: [] for w in workers}
 
     for w in workers:
         current = Task(-1, w.lat, w.lon, 0, 0)
         current_time = WORK_START
-        time_left = params["time_budget"]
+        time_left = params["time_budget"] - params["grace_period"]
 
         while remaining and time_left > 0:
             candidates = []
             for task in remaining:
-                #print("w=", w.id, " t=", task.id)
-                #if task.available == True:
-                    travel = travel_time(current, task, current_time)
-                    score = selection_score(task, travel, current_time, params)
-                    candidates.append((task, score, travel))
+                travel = travel_time(current, task, current_time)
+                score = selection_score(task, travel, current_time, params, policy)
+                candidates.append((task, score, travel))
 
-            candidates.sort(key=lambda x: -x[1])
-            task, _, travel = candidates[0]
+            #candidates.sort(key=lambda x: -x[1])
+            #task, _, travel = candidates[0]
+            
+            task, _, travel = pick_task(candidates)
+
+            if collect:
+                features = policy.features(task, travel, current_time)
+                trajectory.append(features)
 
             total = travel + task.service_time
             if total > time_left:
@@ -173,6 +223,8 @@ def simulate_solution(workers, tasks, params):
             current_time += total
             time_left -= total
 
+    if collect:
+        return solution, trajectory
     return solution
 
 
@@ -195,21 +247,34 @@ def evaluate(solution, tasks, params):
     return score - pend_penalization
 
 
-def monte_carlo(workers, tasks, params, local=False):
-    best = None
-    best_score = -float("inf")
+def monte_carlo_learning(workers, tasks, params, local=False):
+    policy = PolicyModel()
 
-    sims = params["num_simulations_local"] if local else params["num_simulations"]
+    for iteration in range(params["num_simulations"]):  # learning iterations
+        results = []
 
-    for _ in range(sims):
-        sol = simulate_solution(workers, tasks.copy(), params)
-        sc = evaluate(sol, tasks, params)
+        for _ in range(params["budget"]):
+            sol, traj = simulate_solution(workers, tasks.copy(), params, policy, collect=True)
+            sc = evaluate(sol, tasks, params)
+            results.append((sc, sol, traj))
 
-        if sc > best_score:
-            best_score = sc
-            best = sol
+        # Sort by score
+        results.sort(key=lambda x: -x[0])
 
-    return best
+        # Take elite top 10%
+        elite = results[:max(1, len(results)//10)]
+
+        elite_data = []
+        for sc, _, traj in elite:
+            for f in traj:
+                elite_data.append((f, sc))
+
+        # Update policy
+        policy.update(elite_data)
+
+        #print(f"Iteration {iteration} best score: {elite[0][0]}")
+
+    return results[0][1]
 
 # =========================
 # RESCHEDULER
@@ -234,7 +299,7 @@ def reschedule(new_task, workers, all_tasks, params):
 
     local_tasks.append(new_task)
 
-    new_solution = monte_carlo(local_workers, local_tasks, params, local=True)
+    new_solution = monte_carlo_learning(local_workers, local_tasks, params, local=True)
 
     for w in local_workers:
         w.route = new_solution[w.id]
@@ -300,7 +365,7 @@ def run_simulation():
     #tasks = read_tasks_from_csv("tasks.csv", limit=100)
 
     start = time.time()
-    solution = monte_carlo(workers, tasks, params)
+    solution = monte_carlo_learning(workers, tasks, params)
     end = time.time()
 
     print("Initial solution time: ", end - start, " | Score: ", evaluate(solution, tasks, params))
@@ -426,23 +491,26 @@ def export_svg(workers, tasks, filename="solution.svg"):
 
 def mutate(params):
     new = params.copy()
-    for k in new:
-        if isinstance(new[k], (int, float)):
-            new[k] *= random.uniform(0.8, 1.2)
+    new["travel_weight"] *= random.uniform(0.8, 1.2)
+    new["radius"] *= random.uniform(0.8, 1.2)
+    new["exploration_factor"] *= random.uniform(0.8, 1.2)
+    new["grace_period"] *= random.uniform(0.8, 1.2)
+    new["undertime_penalty"] *= random.uniform(0.8, 1.2)
+    new["overtime_penalty"] *= random.uniform(0.8, 1.2)
     return new
 
 
 def evolutionary_tuning():
-    population = [default_params() for _ in range(10)]
+    population = [default_params() for _ in range(EVOLUTION_SIZE)]
 
-    for generation in range(10):
+    for generation in range(EVOLUTION_ITER):
         scored = []
+        workers = generate_workers(3)
+        tasks = generate_tasks(25)
 
         for p in population:
-            workers = generate_workers(3)
-            tasks = generate_tasks(20)
-            sol = monte_carlo(workers, tasks, p)
-            score = evaluate(sol, p)
+            sol = monte_carlo_learning(workers, tasks, p)
+            score = evaluate(sol, tasks, p)
             scored.append((score, p))
 
         scored.sort(reverse=True, key=lambda x: x[0])
@@ -459,6 +527,6 @@ def evolutionary_tuning():
 
 
 if __name__ == "__main__":
-    run_simulation()
-    # best_params = evolutionary_tuning()
-    # print("Best params:", best_params)
+    #run_simulation()
+    best_params = evolutionary_tuning()
+    print("Best params:", best_params)
