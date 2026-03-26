@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -24,8 +28,12 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,10 +48,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+
+private enum class AppTab(val label: String) {
+    RUTA("Ruta"),
+    TECNICOS("Tecnicos"),
+    MENSAJES("Mensajes"),
+}
 
 @Composable
 @Preview
@@ -51,88 +66,72 @@ fun App() {
     AppTheme {
         val uriHandler = LocalUriHandler.current
         val baseTasks = remember { sampleDailyRoute() }
+        val technicians = remember { sampleTechnicians() }
         var doneTaskIds by rememberSaveable { mutableStateOf(emptyList<String>()) }
         var taskTypeOverrides by rememberSaveable { mutableStateOf(mapOf<String, String>()) }
         var selectedTypeFilterName by rememberSaveable { mutableStateOf<String?>(null) }
         var selectedSortOptionName by rememberSaveable { mutableStateOf(TaskSortOption.PRIORIDAD.name) }
         var selectedTask by remember { mutableStateOf<RouteTask?>(null) }
+        var selectedTabName by rememberSaveable { mutableStateOf(AppTab.RUTA.name) }
 
-        val selectedTypeFilter = selectedTypeFilterName?.let { name ->
-            TaskType.entries.firstOrNull { it.name == name }
-        }
+        val selectedTypeFilter = selectedTypeFilterName?.let { name -> TaskType.entries.firstOrNull { it.name == name } }
         val selectedSortOption = TaskSortOption.entries.firstOrNull { it.name == selectedSortOptionName }
             ?: TaskSortOption.PRIORIDAD
+        val selectedTab = AppTab.entries.firstOrNull { it.name == selectedTabName } ?: AppTab.RUTA
+
         val tasks = baseTasks.map { task ->
             val overrideType = taskTypeOverrides[task.id]?.let { overrideName ->
                 TaskType.entries.firstOrNull { it.name == overrideName }
             }
-            task.copy(
-                type = overrideType ?: task.type,
-                isDone = doneTaskIds.contains(task.id),
-            )
+            task.copy(type = overrideType ?: task.type, isDone = doneTaskIds.contains(task.id))
         }
-        val filteredTasks = filterTasksByType(tasks, selectedTypeFilter)
-        val visibleTasks = sortTasks(filteredTasks, selectedSortOption)
-        val pendingCount = tasks.count { !it.isDone }
-        val visiblePendingCount = visibleTasks.count { !it.isDone }
-        val completedCount = tasks.size - pendingCount
 
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding(),
-            color = MaterialTheme.colorScheme.background,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                HeaderSummary(
-                    pendingCount = pendingCount,
-                    completedCount = completedCount,
-                    visiblePendingCount = visiblePendingCount,
-                    visibleTotalCount = visibleTasks.size,
-                    totalCount = tasks.size,
-                )
-
-                Text(
-                    text = "Tipo de tarea",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TaskTypeFilterDropdown(
-                    selectedType = selectedTypeFilter,
-                    onTypeSelected = { selectedTypeFilterName = it?.name },
-                )
-
-                Text(
-                    text = "Orden",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TaskSortRow(
-                    selectedSortOption = selectedSortOption,
-                    onSortSelected = { selectedSortOptionName = it.name },
-                )
-
-                AnimatedContent(targetState = visibleTasks, label = "tasks-filter-animation") { tasksForView ->
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(items = tasksForView, key = { it.id }) { task ->
-                            RouteTaskRow(
-                                task = task,
-                                onTaskChecked = { isChecked ->
-                                    doneTaskIds = updateDoneTaskIds(doneTaskIds, task.id, isChecked)
-                                },
-                                onTaskClick = { selectedTask = task },
-                            )
-                        }
+        Scaffold(
+            modifier = Modifier.safeContentPadding(),
+            bottomBar = {
+                NavigationBar {
+                    AppTab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selectedTab == tab,
+                            onClick = { selectedTabName = tab.name },
+                            icon = {
+                                val icon = when (tab) {
+                                    AppTab.RUTA -> Icons.Default.Home
+                                    AppTab.TECNICOS -> Icons.Default.People
+                                    AppTab.MENSAJES -> Icons.AutoMirrored.Filled.Message
+                                }
+                                Icon(imageVector = icon, contentDescription = tab.label)
+                            },
+                            label = { Text(tab.label) },
+                        )
                     }
                 }
+            },
+        ) { innerPadding ->
+            when (selectedTab) {
+                AppTab.RUTA -> RouteTabContent(
+                    modifier = Modifier.padding(innerPadding),
+                    tasks = tasks,
+                    selectedTypeFilter = selectedTypeFilter,
+                    selectedSortOption = selectedSortOption,
+                    onTypeFilterChange = { selectedTypeFilterName = it?.name },
+                    onSortOptionChange = { selectedSortOptionName = it.name },
+                    onTaskChecked = { task, isChecked ->
+                        doneTaskIds = updateDoneTaskIds(doneTaskIds, task.id, isChecked)
+                    },
+                    onTaskClick = { selectedTask = it },
+                )
+
+                AppTab.TECNICOS -> TechniciansTabContent(
+                    modifier = Modifier.padding(innerPadding),
+                    technicians = technicians,
+                    onCallTechnician = { technician -> uriHandler.openUri(phoneDialUri(technician.phone)) },
+                    onOpenTechnicianLocation = { technician ->
+                        uriHandler.openUri(googleMapsPinUrl(technician.latitude, technician.longitude, technician.name))
+                    },
+                )
+
+                AppTab.MENSAJES -> MessagesTabContent(modifier = Modifier.padding(innerPadding))
             }
 
             selectedTask?.let { task ->
@@ -150,6 +149,171 @@ fun App() {
                     onPhotoClick = { photoUrl -> uriHandler.openUri(photoUrl) },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun RouteTabContent(
+    modifier: Modifier,
+    tasks: List<RouteTask>,
+    selectedTypeFilter: TaskType?,
+    selectedSortOption: TaskSortOption,
+    onTypeFilterChange: (TaskType?) -> Unit,
+    onSortOptionChange: (TaskSortOption) -> Unit,
+    onTaskChecked: (RouteTask, Boolean) -> Unit,
+    onTaskClick: (RouteTask) -> Unit,
+) {
+    val filteredTasks = filterTasksByType(tasks, selectedTypeFilter)
+    val visibleTasks = sortTasks(filteredTasks, selectedSortOption)
+    val pendingCount = tasks.count { !it.isDone }
+    val visiblePendingCount = visibleTasks.count { !it.isDone }
+    val completedCount = tasks.size - pendingCount
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            HeaderSummary(
+                pendingCount = pendingCount,
+                completedCount = completedCount,
+                visiblePendingCount = visiblePendingCount,
+                visibleTotalCount = visibleTasks.size,
+                totalCount = tasks.size,
+            )
+
+            Text(
+                text = "Tipo de tarea",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TaskTypeFilterDropdown(
+                selectedType = selectedTypeFilter,
+                onTypeSelected = onTypeFilterChange,
+            )
+
+            Text(
+                text = "Orden",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TaskSortRow(
+                selectedSortOption = selectedSortOption,
+                onSortSelected = onSortOptionChange,
+            )
+
+            AnimatedContent(targetState = visibleTasks, label = "tasks-filter-animation") { tasksForView ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(items = tasksForView, key = { it.id }) { task ->
+                        RouteTaskRow(
+                            task = task,
+                            onTaskChecked = { checked -> onTaskChecked(task, checked) },
+                            onTaskClick = { onTaskClick(task) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TechniciansTabContent(
+    modifier: Modifier,
+    technicians: List<Technician>,
+    onCallTechnician: (Technician) -> Unit,
+    onOpenTechnicianLocation: (Technician) -> Unit,
+) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Ubicacion de tecnicos",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Consulta donde esta cada tecnico y contactalo rapido.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(technicians, key = { it.id }) { technician ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(text = technician.name, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                text = technician.address,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { onCallTechnician(technician) }) {
+                                    Text("Llamar")
+                                }
+                                OutlinedButton(onClick = { onOpenTechnicianLocation(technician) }) {
+                                    Text("Ver en mapa")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessagesTabContent(modifier: Modifier) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = "Mensajes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = "Aqui puedes integrar el chat operativo del equipo.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontStyle = FontStyle.Italic,
+            )
         }
     }
 }
