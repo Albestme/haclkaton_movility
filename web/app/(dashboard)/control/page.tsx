@@ -28,9 +28,14 @@ const statusLabel: Record<WorkOrder["status"], string> = {
 };
 
 const priorityLabel: Record<WorkOrder["priority"], string> = {
-  high: "Alta",
-  medium: "Media",
-  low: "Baja",
+  correctivo_critico: "Correctivo critico",
+  correctivo_no_critico: "Correctivo no critico",
+  mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
+  puesta_en_marcha: "Puesta en marcha",
+  visita_diagnostico: "Visita de diagnostico",
+  high: "Correctivo critico",
+  medium: "Mantenimiento preventivo programado",
+  low: "Visita de diagnostico",
 };
 
 function getReferenceDate() {

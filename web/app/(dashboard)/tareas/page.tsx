@@ -12,12 +12,22 @@ const statusLabel: Record<WorkOrder["status"], string> = {
 };
 
 const priorityLabel: Record<WorkOrder["priority"], string> = {
-  high: "Alta",
-  medium: "Media",
-  low: "Baja",
+  correctivo_critico: "Correctivo critico",
+  correctivo_no_critico: "Correctivo no critico",
+  mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
+  puesta_en_marcha: "Puesta en marcha",
+  visita_diagnostico: "Visita de diagnostico",
+  high: "Correctivo critico",
+  medium: "Mantenimiento preventivo programado",
+  low: "Visita de diagnostico",
 };
 
 const priorityClassName: Record<WorkOrder["priority"], string> = {
+  correctivo_critico: "text-red-600",
+  correctivo_no_critico: "text-orange-600",
+  mantenimiento_preventivo_programado: "text-amber-600",
+  puesta_en_marcha: "text-blue-600",
+  visita_diagnostico: "text-emerald-600",
   high: "text-red-600",
   medium: "text-amber-600",
   low: "text-emerald-600",
