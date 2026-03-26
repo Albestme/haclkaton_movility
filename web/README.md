@@ -6,6 +6,7 @@ Incluye:
 - Menu lateral estilo app para moverte entre pestañas
 - Panel de control con KPIs operativos
 - Panel de control temporal para entradas de tareas por intervalo
+- Pantalla de rutas con OpenStreetMap para tecnicos asignados
 - Panel de tareas con todas las OT del sistema
 - Lista filtrable de ordenes de trabajo
 - Detalle de orden seleccionada
@@ -18,6 +19,7 @@ Incluye:
 - `app/(dashboard)/layout.tsx`: shell con menu lateral
 - `app/(dashboard)/panel/page.tsx`: panel operativo principal
 - `app/(dashboard)/control/page.tsx`: panel de entradas por tiempo
+- `app/(dashboard)/rutas/page.tsx`: mapa de rutas de tecnicos
 - `app/(dashboard)/tareas/page.tsx`: listado completo de tareas
 - `app/(dashboard)/tecnicos/page.tsx`: vista de tecnicos
 - `src/components/sidebar-nav.tsx`: menu lateral
