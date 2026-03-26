@@ -100,5 +100,22 @@ class RouteTaskTest {
 
         assertEquals(listOf("T-002"), result)
     }
+
+    @Test
+    fun routeTask_photoUrls_isEmptyByDefault() {
+        val task = RouteTask("X", "Sitio X", "Dir X", "10:00", TaskType.PUESTA_EN_MARCHA)
+
+        assertTrue(task.photoUrls.isEmpty())
+    }
+
+    @Test
+    fun googleMapsNavigationUrl_buildsNavigationLink() {
+        val url = googleMapsNavigationUrl("Calle 45 #12-20")
+
+        assertEquals(
+            "https://www.google.com/maps/dir/?api=1&destination=Calle%2045%20%2312-20&travelmode=driving",
+            url,
+        )
+    }
 }
 

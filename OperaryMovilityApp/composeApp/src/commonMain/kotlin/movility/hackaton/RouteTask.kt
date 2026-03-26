@@ -19,6 +19,7 @@ data class RouteTask(
     val address: String,
     val scheduledTime: String,
     val type: TaskType,
+    val photoUrls: List<String> = emptyList(),
     val isDone: Boolean = false,
 )
 
@@ -50,6 +51,25 @@ fun updateDoneTaskIds(doneTaskIds: List<String>, taskId: String, isDone: Boolean
     }
 }
 
+fun googleMapsNavigationUrl(destination: String): String {
+    val encodedDestination = urlEncodeForQuery(destination)
+    return "https://www.google.com/maps/dir/?api=1&destination=$encodedDestination&travelmode=driving"
+}
+
+private fun urlEncodeForQuery(rawValue: String): String {
+    val trimmed = rawValue.trim()
+    return buildString {
+        for (char in trimmed) {
+            if (char.isLetterOrDigit() || char == '-' || char == '_' || char == '.' || char == '~') {
+                append(char)
+            } else {
+                append('%')
+                append(char.code.toString(16).uppercase().padStart(2, '0'))
+            }
+        }
+    }
+}
+
 fun sampleDailyRoute(): List<RouteTask> {
     val tasks = listOf(
         RouteTask(
@@ -58,6 +78,10 @@ fun sampleDailyRoute(): List<RouteTask> {
             address = "Av. Principal 123",
             scheduledTime = "08:00",
             type = TaskType.CORRECTIVO_CRITICO,
+            photoUrls = listOf(
+                "https://images.pexels.com/photos/257736/pexels-photo-257736.jpeg",
+                "https://images.pexels.com/photos/159397/solar-panel-array-power-sun-electricity-159397.jpeg",
+            ),
         ),
         RouteTask(
             id = "T-002",
@@ -72,6 +96,7 @@ fun sampleDailyRoute(): List<RouteTask> {
             address = "Cra 10 #80-15",
             scheduledTime = "11:00",
             type = TaskType.MANTENIMIENTO_PREVENTIVO_PROGRAMADO,
+            photoUrls = listOf("https://images.pexels.com/photos/9800025/pexels-photo-9800025.jpeg"),
         ),
         RouteTask(
             id = "T-004",
