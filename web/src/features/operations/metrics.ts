@@ -58,3 +58,22 @@ export function nextOrderStatus(current: WorkOrder["status"]): WorkOrder["status
   return "done";
 }
 
+export function countOrdersInLastHours(
+  orders: WorkOrder[],
+  hours: number,
+  referenceDate = new Date(),
+): number {
+  const windowMs = hours * 60 * 60 * 1000;
+  const referenceMs = referenceDate.getTime();
+
+  return orders.filter((order) => {
+    const createdMs = new Date(order.createdAt).getTime();
+
+    if (!Number.isFinite(createdMs)) {
+      return false;
+    }
+
+    return referenceMs - createdMs <= windowMs && referenceMs - createdMs >= 0;
+  }).length;
+}
+

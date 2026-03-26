@@ -24,6 +24,7 @@ export type WorkOrder = {
   siteName: string;
   city: string;
   address: string;
+  createdAt: string;
   connectorType: string;
   priority: WorkOrderPriority;
   status: WorkOrderStatus;
