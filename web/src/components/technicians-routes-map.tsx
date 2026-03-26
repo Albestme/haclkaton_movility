@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Fragment } from "react";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer } from "react-leaflet";
 import { GeoPoint, TechnicianStatus } from "@/src/features/operations/types";
+import {
+  formatDistance,
+  formatDuration,
+  resolveRoadRoute,
+} from "@/src/features/operations/routing";
 
 export type TechnicianRoute = {
   technicianId: string;
@@ -20,6 +25,9 @@ type TechniciansRoutesMapProps = {
 
 type ResolvedRoute = TechnicianRoute & {
   resolvedPath: GeoPoint[];
+  distanceMeters: number;
+  durationSeconds: number;
+  source: "osrm" | "fallback";
 };
 
 const routeColorByStatus: Record<TechnicianStatus, string> = {
@@ -36,29 +44,15 @@ const statusLabel: Record<TechnicianStatus, string> = {
   offline: "Fuera de linea",
 };
 
-async function fetchRoadRoute(start: GeoPoint, end: GeoPoint): Promise<GeoPoint[] | null> {
-  const coordinates = `${start.lng},${start.lat};${end.lng},${end.lat}`;
-  const response = await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`,
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const payload = await response.json();
-  const geometry = payload?.routes?.[0]?.geometry?.coordinates as [number, number][] | undefined;
-
-  if (!geometry || geometry.length < 2) {
-    return null;
-  }
-
-  return geometry.map(([lng, lat]) => ({ lat, lng }));
-}
-
 export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapProps) {
   const [resolvedRoutes, setResolvedRoutes] = useState<ResolvedRoute[]>(
-    routes.map((route) => ({ ...route, resolvedPath: route.path })),
+    routes.map((route) => ({
+      ...route,
+      resolvedPath: route.path,
+      distanceMeters: 0,
+      durationSeconds: 0,
+      source: "fallback",
+    })),
   );
 
   useEffect(() => {
@@ -71,17 +65,32 @@ export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapPro
           const end = route.path[route.path.length - 1];
 
           if (!start || !end) {
-            return { ...route, resolvedPath: route.path };
+            return {
+              ...route,
+              resolvedPath: route.path,
+              distanceMeters: 0,
+              durationSeconds: 0,
+              source: "fallback" as const,
+            };
           }
 
           try {
-            const roadPath = await fetchRoadRoute(start, end);
+            const roadRoute = await resolveRoadRoute(start, end, route.path);
             return {
               ...route,
-              resolvedPath: roadPath ?? route.path,
+              resolvedPath: roadRoute.path,
+              distanceMeters: roadRoute.distanceMeters,
+              durationSeconds: roadRoute.durationSeconds,
+              source: roadRoute.source,
             };
           } catch {
-            return { ...route, resolvedPath: route.path };
+            return {
+              ...route,
+              resolvedPath: route.path,
+              distanceMeters: 0,
+              durationSeconds: 0,
+              source: "fallback" as const,
+            };
           }
         }),
       );
@@ -91,7 +100,15 @@ export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapPro
       }
     }
 
-    setResolvedRoutes(routes.map((route) => ({ ...route, resolvedPath: route.path })));
+    setResolvedRoutes(
+      routes.map((route) => ({
+        ...route,
+        resolvedPath: route.path,
+        distanceMeters: 0,
+        durationSeconds: 0,
+        source: "fallback" as const,
+      })),
+    );
     void resolveRoutes();
 
     return () => {
@@ -150,6 +167,8 @@ export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapPro
                   <p className="font-semibold">{route.technicianName}</p>
                   <p>Estado: {statusLabel[route.status]}</p>
                   <p>Salida de ruta</p>
+                  <p>Distancia: {formatDistance(route.distanceMeters)}</p>
+                  <p>ETA: {formatDuration(route.durationSeconds)}</p>
                 </div>
               </Popup>
             </CircleMarker>
@@ -164,6 +183,11 @@ export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapPro
                   <p className="font-semibold">{route.orderSiteName}</p>
                   <p>OT: {route.orderId}</p>
                   <p>Destino de ruta</p>
+                  <p>Distancia: {formatDistance(route.distanceMeters)}</p>
+                  <p>ETA: {formatDuration(route.durationSeconds)}</p>
+                  <p className="text-xs text-slate-500">
+                    {route.source === "osrm" ? "Ruta vial (OSRM)" : "Estimacion local"}
+                  </p>
                 </div>
               </Popup>
             </CircleMarker>

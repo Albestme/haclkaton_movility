@@ -39,6 +39,12 @@ npm run check
 npm run build
 ```
 
+## Variables de entorno
+
+- `NEXT_PUBLIC_OSRM_BASE_URL`: endpoint base para calcular rutas de carretera en la pantalla `rutas`.
+  - Valor por defecto: `https://router.project-osrm.org`
+  - Ejemplo local: `NEXT_PUBLIC_OSRM_BASE_URL=https://router.project-osrm.org`
+
 ## Roadmap sugerido
 
 1. Persistir datos con API (`app/api/*`) y base de datos.
