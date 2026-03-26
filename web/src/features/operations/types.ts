@@ -3,10 +3,16 @@ export type TechnicianStatus = "available" | "on_route" | "working" | "offline";
 export type WorkOrderPriority = "high" | "medium" | "low";
 export type WorkOrderStatus = "pending" | "assigned" | "in_progress" | "done";
 
+export type GeoPoint = {
+  lat: number;
+  lng: number;
+};
+
 export type Technician = {
   id: string;
   name: string;
   zone: string;
+  location: GeoPoint;
   skills: string[];
   status: TechnicianStatus;
   activeOrderId?: string;

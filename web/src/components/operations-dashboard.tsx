@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import {
   initialTechnicians,
@@ -50,6 +51,15 @@ const priorityColor: Record<WorkOrder["priority"], string> = {
   medium: "text-amber-600",
   low: "text-emerald-600",
 };
+
+const TechniciansMap = dynamic(() => import("@/src/components/technicians-map"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[360px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+      Cargando mapa...
+    </div>
+  ),
+});
 
 export default function OperationsDashboard() {
   const [technicians, setTechnicians] = useState<Technician[]>(initialTechnicians);
@@ -257,6 +267,14 @@ export default function OperationsDashboard() {
           </div>
 
           <aside className="space-y-4">
+            <div className="rounded-2xl bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-lg font-semibold">Mapa de tecnicos (OpenStreetMap)</h3>
+              <p className="mb-3 text-sm text-slate-500">
+                Cada tecnico aparece como un punto geolocalizado.
+              </p>
+              <TechniciansMap technicians={technicians} />
+            </div>
+
             <div className="rounded-2xl bg-white p-5 shadow-sm">
               <h3 className="mb-3 text-lg font-semibold">Detalle de orden</h3>
               {selectedOrder ? (

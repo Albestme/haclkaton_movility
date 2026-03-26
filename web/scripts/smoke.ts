@@ -13,6 +13,15 @@ function assert(condition: boolean, message: string) {
 }
 
 function runSmoke() {
+  assert(
+    initialTechnicians.every(
+      (technician) =>
+        Number.isFinite(technician.location.lat) &&
+        Number.isFinite(technician.location.lng),
+    ),
+    "Cada tecnico debe tener coordenadas validas",
+  );
+
   const metrics = buildDashboardMetrics(initialTechnicians, initialWorkOrders);
   assert(metrics.openOrders >= 1, "Debe haber ordenes abiertas en la semilla");
 
