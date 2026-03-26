@@ -44,6 +44,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation("com.google.android.gms:play-services-maps:19.2.0")
+            implementation("com.google.maps.android:maps-compose:6.1.0")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

@@ -233,6 +233,8 @@ private fun TechniciansTabContent(
     onCallTechnician: (Technician) -> Unit,
     onOpenTechnicianLocation: (Technician) -> Unit,
 ) {
+    var selectedTechnicianByMap by remember { mutableStateOf<Technician?>(null) }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -252,6 +254,12 @@ private fun TechniciansTabContent(
                 text = "Consulta donde esta cada tecnico y contactalo rapido.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            TechniciansRealMap(
+                modifier = Modifier.fillMaxWidth(),
+                technicians = technicians,
+                onTechnicianClick = { selectedTechnicianByMap = it },
             )
 
             LazyColumn(
@@ -289,6 +297,36 @@ private fun TechniciansTabContent(
                         }
                     }
                 }
+            }
+
+            selectedTechnicianByMap?.let { technician ->
+                AlertDialog(
+                    onDismissRequest = { selectedTechnicianByMap = null },
+                    title = { Text(technician.name) },
+                    text = {
+                        Text(
+                            text = technician.address,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            onCallTechnician(technician)
+                            selectedTechnicianByMap = null
+                        }) {
+                            Text("Llamar")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(onClick = {
+                            onOpenTechnicianLocation(technician)
+                            selectedTechnicianByMap = null
+                        }) {
+                            Text("Abrir mapa")
+                        }
+                    },
+                )
             }
         }
     }
