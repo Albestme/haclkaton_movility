@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -138,11 +140,12 @@ private fun ConversationListView(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-            ) {
-                items(conversations, key = { it.id }) { conversation ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            state = rememberLazyListState(),
+        ) {
+            items(conversations, key = { it.id }) { conversation ->
                     ConversationListItem(
                         conversation = conversation,
                         onSelected = { onConversationSelected(conversation) },
@@ -228,6 +231,7 @@ private fun ChatDetailView(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                state = rememberLazyListState(),
             ) {
                 items(conversation.messages, key = { it.id }) { message ->
                     MessageBubble(message = message)
