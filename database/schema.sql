@@ -10,7 +10,9 @@ DROP TABLE IF EXISTS TECHNICIAN CASCADE;
 CREATE TABLE TECHNICIAN (
     technician_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    zone VARCHAR(100)
+    zone VARCHAR(100),
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8)
 );
 
 CREATE TABLE CHARGER (
@@ -28,7 +30,10 @@ CREATE TABLE CHARGER (
     max_power_kw DECIMAL(10,2),
     ocpp_version VARCHAR(20),
     telecom_provider VARCHAR(50),
-    installation_date DATE
+    installation_date DATE,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    active BOOLEAN
 );
 
 CREATE TABLE CONTRACT (
@@ -48,7 +53,7 @@ CREATE TABLE INCIDENCE (
     incidence_id SERIAL PRIMARY KEY,
     charger_id INTEGER REFERENCES CHARGER(charger_id),
     reported_at TIMESTAMP,
-    priority INTEGER,
+    priority VARCHAR(50),
     status VARCHAR(50),
     description TEXT,
     estimated_duration_min INTEGER,
@@ -66,8 +71,6 @@ CREATE TABLE VISIT (
     planned_date DATE,
     address TEXT,
     postal_code VARCHAR(10),
-    latitude DECIMAL(10,8),
-    longitude DECIMAL(11,8),
     location_source VARCHAR(50),
     estimated_duration_min INTEGER
 );
