@@ -1,5 +1,5 @@
-import OperationsDashboard from "@/src/components/operations-dashboard";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <OperationsDashboard />;
+  redirect("/panel");
 }

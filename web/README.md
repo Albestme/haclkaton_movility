@@ -3,7 +3,11 @@
 Base inicial para una empresa que instala y mantiene cargadores de vehiculos electricos.
 
 Incluye:
+- Menu lateral estilo app para moverte entre pestañas
 - Panel de control con KPIs operativos
+- Panel de control temporal para entradas de tareas por intervalo
+- Pantalla de rutas con OpenStreetMap para tecnicos asignados
+- Panel de tareas con todas las OT del sistema
 - Lista filtrable de ordenes de trabajo
 - Detalle de orden seleccionada
 - Sugerencia y asignacion de tecnico
@@ -11,8 +15,15 @@ Incluye:
 
 ## Estructura principal
 
-- `app/page.tsx`: entrada de la aplicacion
-- `src/components/operations-dashboard.tsx`: interfaz principal
+- `app/page.tsx`: redirige a `/panel`
+- `app/(dashboard)/layout.tsx`: shell con menu lateral
+- `app/(dashboard)/panel/page.tsx`: panel operativo principal
+- `app/(dashboard)/control/page.tsx`: panel de entradas por tiempo
+- `app/(dashboard)/rutas/page.tsx`: mapa de rutas de tecnicos
+- `app/(dashboard)/tareas/page.tsx`: listado completo de tareas
+- `app/(dashboard)/tecnicos/page.tsx`: vista de tecnicos
+- `src/components/sidebar-nav.tsx`: menu lateral
+- `src/components/operations-dashboard.tsx`: interfaz operativa principal
 - `src/features/operations/types.ts`: tipos de dominio
 - `src/features/operations/data.ts`: datos semilla para MVP
 - `src/features/operations/metrics.ts`: logica de filtrado y metricas
@@ -27,6 +38,12 @@ npm run smoke
 npm run check
 npm run build
 ```
+
+## Variables de entorno
+
+- `NEXT_PUBLIC_OSRM_BASE_URL`: endpoint base para calcular rutas de carretera en la pantalla `rutas`.
+  - Valor por defecto: `https://router.project-osrm.org`
+  - Ejemplo local: `NEXT_PUBLIC_OSRM_BASE_URL=https://router.project-osrm.org`
 
 ## Roadmap sugerido
 

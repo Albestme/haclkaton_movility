@@ -40,17 +40,27 @@ const orderStatusLabel: Record<WorkOrder["status"], string> = {
   done: "Completada",
 };
 
-const priorityLabel: Record<WorkOrder["priority"], string> = {
-  high: "Alta",
-  medium: "Media",
-  low: "Baja",
-};
+const priorityLabel = {
+  correctivo_critico: "Correctivo critico",
+  correctivo_no_critico: "Correctivo no critico",
+  mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
+  puesta_en_marcha: "Puesta en marcha",
+  visita_diagnostico: "Visita de diagnostico",
+  high: "Correctivo critico",
+  medium: "Mantenimiento preventivo programado",
+  low: "Visita de diagnostico",
+} as const;
 
-const priorityColor: Record<WorkOrder["priority"], string> = {
+const priorityColor = {
+  correctivo_critico: "text-red-600",
+  correctivo_no_critico: "text-orange-600",
+  mantenimiento_preventivo_programado: "text-amber-600",
+  puesta_en_marcha: "text-blue-600",
+  visita_diagnostico: "text-emerald-600",
   high: "text-red-600",
   medium: "text-amber-600",
   low: "text-emerald-600",
-};
+} as const;
 
 const TechniciansMap = dynamic(() => import("@/src/components/technicians-map"), {
   ssr: false,
@@ -201,9 +211,11 @@ export default function OperationsDashboard() {
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
               >
                 <option value="all">Todas las prioridades</option>
-                <option value="high">Alta</option>
-                <option value="medium">Media</option>
-                <option value="low">Baja</option>
+                <option value="correctivo_critico">Correctivo critico</option>
+                <option value="correctivo_no_critico">Correctivo no critico</option>
+                <option value="mantenimiento_preventivo_programado">Mantenimiento preventivo programado</option>
+                <option value="puesta_en_marcha">Puesta en marcha</option>
+                <option value="visita_diagnostico">Visita de diagnostico</option>
               </select>
 
               <select

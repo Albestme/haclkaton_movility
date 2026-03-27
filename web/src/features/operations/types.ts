@@ -1,6 +1,14 @@
 export type TechnicianStatus = "available" | "on_route" | "working" | "offline";
 
-export type WorkOrderPriority = "high" | "medium" | "low";
+export type WorkOrderPriority =
+  | "correctivo_critico"
+  | "correctivo_no_critico"
+  | "mantenimiento_preventivo_programado"
+  | "puesta_en_marcha"
+  | "visita_diagnostico"
+  | "high"
+  | "medium"
+  | "low";
 export type WorkOrderStatus = "pending" | "assigned" | "in_progress" | "done";
 
 export type GeoPoint = {
@@ -24,6 +32,7 @@ export type WorkOrder = {
   siteName: string;
   city: string;
   address: string;
+  createdAt: string;
   connectorType: string;
   priority: WorkOrderPriority;
   status: WorkOrderStatus;
