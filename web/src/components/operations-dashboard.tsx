@@ -19,6 +19,11 @@ import {
   WorkOrder,
 } from "@/src/features/operations/types";
 
+type OperationsDashboardProps = {
+  initialTechniciansData?: Technician[];
+  initialOrdersData?: WorkOrder[];
+};
+
 const defaultFilters: OrderFilters = {
   charger: "all",
   priority: "all",
@@ -55,11 +60,17 @@ const TechniciansMap = dynamic(() => import("@/src/components/technicians-map"),
   ),
 });
 
-export default function OperationsDashboard() {
-  const [technicians, setTechnicians] = useState<Technician[]>(initialTechnicians);
-  const [orders, setOrders] = useState<WorkOrder[]>(initialWorkOrders);
+export default function OperationsDashboard({
+  initialTechniciansData,
+  initialOrdersData,
+}: OperationsDashboardProps) {
+  const baseTechnicians = initialTechniciansData ?? initialTechnicians;
+  const baseOrders = initialOrdersData ?? initialWorkOrders;
+
+  const [technicians, setTechnicians] = useState<Technician[]>(baseTechnicians);
+  const [orders, setOrders] = useState<WorkOrder[]>(baseOrders);
   const [filters, setFilters] = useState<OrderFilters>(defaultFilters);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(initialWorkOrders[0]?.incidence_id ?? null);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(baseOrders[0]?.incidence_id ?? null);
 
   const filteredOrders = useMemo(() => filterOrders(orders, filters), [orders, filters]);
   const selectedOrder = useMemo(

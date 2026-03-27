@@ -1,4 +1,6 @@
+import os
 from fastapi import FastAPI, HTTPException, Path
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
@@ -15,6 +17,15 @@ app = FastAPI(
     title="Etecnic Copilot - Backend API",
     description="Main Backend connecting Frontend, internal Planner, and Database.",
     version="1.2.0" # Subimos versión por el cambio de esquema de Satxa
+)
+
+cors_origins = [origin.strip() for origin in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",") if origin.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins or ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ==========================================
@@ -184,6 +195,24 @@ def get_specific_incidence(incidence_id: int = Path(...)):
 # ENDPOINTS PARA EL FRONTEND APP (Albert)
 # ==========================================
 
+@app.get("/api/v1/app/technicians")
+def get_all_technicians():
+    """Lista todos los técnicos para poblar paneles del frontend."""
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT technician_id, name, zone, latitude, longitude
+            FROM technician
+            ORDER BY technician_id ASC;
+        """)
+        return cur.fetchall()
+    except Exception as e:
+        print(f"Error fetching technicians: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
+    finally:
+        conn.close()
+
 @app.get("/api/v1/app/technicians/{tech_id}")
 def get_technician_details(tech_id: int = Path(...)):
     """Dado un ID de técnico, devuelve todos sus detalles."""
@@ -214,7 +243,7 @@ def get_technician_route(tech_id: int = Path(...)):
         # Adaptado para leer 'v.priority'
         cur.execute("""
             SELECT 
-                v.visit_id, v.priority, v.status, v.planned_date, v.address, 
+                v.visit_id, v.incidence_id, v.contract_id, v.priority, v.status, v.planned_date, v.address, 
                 v.estimated_duration_min,
                 COALESCE(ci.latitude, cc.latitude) AS latitude,
                 COALESCE(ci.longitude, cc.longitude) AS longitude
@@ -243,4 +272,9 @@ def get_all_incidences():
 
 # Run with: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host=os.getenv("BACKEND_HOST", "0.0.0.0"),
+        port=int(os.getenv("BACKEND_PORT", "8000")),
+        reload=True,
+    )

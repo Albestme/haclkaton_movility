@@ -1,14 +1,7 @@
-import { initialTechnicians, initialWorkOrders } from "@/src/features/operations/data";
-import { GeoPoint, TechnicianStatus } from "@/src/features/operations/types";
+import { getOperationsSnapshot } from "@/src/features/operations/backend";
+import { TechnicianStatus } from "@/src/features/operations/types";
 import type { TechnicianRoute } from "@/src/components/technicians-routes-map";
 import TechniciansRoutesMapClient from "@/src/components/technicians-routes-map-client";
-
-const orderDestinationById: Record<number, GeoPoint> = {
-  1: { lat: 41.3936, lng: 2.1937 },
-  2: { lat: 41.1184, lng: 1.2451 },
-  3: { lat: 41.1564, lng: 1.1079 },
-  4: { lat: 41.9972, lng: 2.8093 },
-};
 
 const statusLabel: Record<TechnicianStatus, string> = {
   available: "Disponible",
@@ -17,40 +10,9 @@ const statusLabel: Record<TechnicianStatus, string> = {
   offline: "Fuera de línea",
 };
 
-function buildRoutePoints(start: GeoPoint, end: GeoPoint): GeoPoint[] {
-  const mid: GeoPoint = {
-    lat: (start.lat + end.lat) / 2 + 0.02,
-    lng: (start.lng + end.lng) / 2 - 0.015,
-  };
-
-  return [start, mid, end];
-}
-
-function getAssignedRoutes(): TechnicianRoute[] {
-  return initialTechnicians
-    .filter((technician) => technician.activeOrderId)
-    .map((technician) => {
-      const order = initialWorkOrders.find((item) => item.incidence_id === technician.activeOrderId);
-      const destination = order ? orderDestinationById[order.incidence_id] : undefined;
-
-      if (!order || !destination) {
-        return null;
-      }
-
-      return {
-        technicianId: technician.id,
-        technicianName: technician.name,
-        status: technician.status,
-        orderId: `INC-${order.incidence_id}`,
-        orderSiteName: `Cargador ${order.charger_id}`,
-        path: buildRoutePoints(technician.location, destination),
-      };
-    })
-    .filter((route): route is TechnicianRoute => route !== null);
-}
-
-export default function RutasPage() {
-  const routes = getAssignedRoutes();
+export default async function RutasPage() {
+  const snapshot = await getOperationsSnapshot();
+  const routes: TechnicianRoute[] = snapshot.routes;
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6">

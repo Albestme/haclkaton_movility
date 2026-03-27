@@ -10,6 +10,7 @@ export type GeoPoint = {
 
 export type Technician = {
   id: string;
+  backendId?: number;
   name: string;
   zone: string;
   location: GeoPoint;

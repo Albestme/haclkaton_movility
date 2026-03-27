@@ -1,7 +1,4 @@
-import {
-  initialTechnicians,
-  initialWorkOrders,
-} from "@/src/features/operations/data";
+import { getOperationsSnapshot } from "@/src/features/operations/backend";
 import { WorkOrder } from "@/src/features/operations/types";
 
 const statusLabel: Record<WorkOrder["status"], string> = {
@@ -17,7 +14,9 @@ const priorityClassName: Record<string, string> = {
   "Manteniment preventiu": "text-amber-600",
 };
 
-export default function TareasPage() {
+export default async function TareasPage() {
+  const snapshot = await getOperationsSnapshot();
+
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6">
       <header className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
@@ -45,8 +44,8 @@ export default function TareasPage() {
             </tr>
           </thead>
           <tbody>
-            {initialWorkOrders.map((order) => {
-              const technician = initialTechnicians.find((item) => item.id === order.technicianId);
+            {snapshot.workOrders.map((order) => {
+              const technician = snapshot.technicians.find((item) => item.id === order.technicianId);
 
               return (
                 <tr key={order.incidence_id} className="border-t border-slate-200">
