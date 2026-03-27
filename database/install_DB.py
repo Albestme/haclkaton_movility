@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuració
-DB_SCHEMA = './schema.sql'
-DB_SEED = './seed_data.sql'
+DB_SCHEMA = './database/schema.sql'
+DB_SEED = './database/seed_data.sql'
 
 def run_sql_file(cursor, file_path):
     print(f"📖 Llegint {file_path}...")
