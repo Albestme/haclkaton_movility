@@ -33,9 +33,9 @@ actual fun TechniciansRealMap(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(text = "Mapa de tecnicos", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Mapa de técnicos", style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "Mapa real pendiente para iOS. Puedes tocar un tecnico para ver acciones.",
+                text = "Mapa real pendiente para iOS. Puedes tocar un técnico para ver acciones.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

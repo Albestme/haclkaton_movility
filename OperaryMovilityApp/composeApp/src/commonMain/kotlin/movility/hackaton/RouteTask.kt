@@ -1,11 +1,11 @@
 package movility.hackaton
 
 enum class TaskType(val label: String, val priorityOrder: Int) {
-    CORRECTIVO_CRITICO("Correctivo critico", 0),
-    CORRECTIVO_NO_CRITICO("Correctivo no critico", 1),
+    CORRECTIVO_CRITICO("Correctivo crítico", 0),
+    CORRECTIVO_NO_CRITICO("Correctivo no crítico", 1),
     MANTENIMIENTO_PREVENTIVO_PROGRAMADO("Mantenimiento preventivo programado", 2),
     PUESTA_EN_MARCHA("Puesta en marcha", 3),
-    VISITA_DE_DIAGNOSTICO("Visita de diagnostico", 4),
+    VISITA_DE_DIAGNOSTICO("Visita de diagnóstico", 4),
 }
 
 enum class TaskSortOption(val label: String) {
@@ -74,7 +74,7 @@ fun sampleDailyRoute(): List<RouteTask> {
     val tasks = listOf(
         RouteTask(
             id = "T-001",
-            siteName = "Estacion Centro",
+            siteName = "Estación Centro",
             address = "Av. Principal 123",
             scheduledTime = "08:00",
             type = TaskType.CORRECTIVO_CRITICO,

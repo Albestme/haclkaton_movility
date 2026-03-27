@@ -45,7 +45,7 @@ fun sampleTechnicians(): List<Technician> {
         ),
         Technician(
             id = "TEC-02",
-            name = "Luisa Diaz",
+            name = "Luisa Díaz",
             phone = "+573004445566",
             address = "Zona Centro - Av. 7 #45-10",
             latitude = 4.638,
@@ -53,7 +53,7 @@ fun sampleTechnicians(): List<Technician> {
         ),
         Technician(
             id = "TEC-03",
-            name = "Andres Mejia",
+            name = "Andrés Mejía",
             phone = "+573007778899",
             address = "Zona Sur - Calle 30 Sur #52-11",
             latitude = 4.578,

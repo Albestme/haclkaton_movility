@@ -59,7 +59,7 @@ import kotlinx.coroutines.delay
 
 private enum class AppTab(val label: String) {
     RUTA("Ruta"),
-    TECNICOS("Tecnicos"),
+    TECNICOS("Técnicos"),
     MENSAJES("Mensajes"),
 }
 
@@ -277,14 +277,14 @@ private fun TechniciansTabContent(
         ) {
             item {
                 Text(
-                    text = "Ubicacion de tecnicos",
+                    text = "Ubicación de técnicos",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
             item {
                 Text(
-                    text = "Consulta donde esta cada tecnico y contactalo rapido.",
+                    text = "Consulta dónde está cada técnico y contáctalo rápido.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -436,7 +436,7 @@ private fun ActiveTaskScreen(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Cronometro activo",
+                        text = "Cronómetro activo",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -656,7 +656,7 @@ private fun HeaderSummary(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "Ruta diaria del tecnico",
+                text = "Ruta diaria del técnico",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -815,7 +815,7 @@ private fun TaskDetailDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Ubicacion: ${task.address}",
+                    text = "Ubicación: ${task.address}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

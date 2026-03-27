@@ -98,9 +98,9 @@ actual fun TechniciansRealMap(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(text = "Mapa de tecnicos", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Mapa de técnicos", style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "OpenStreetMap integrado. Pulsa un punto para abrir la ficha del tecnico.",
+                text = "OpenStreetMap integrado. Pulsa un punto para abrir la ficha del técnico.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
