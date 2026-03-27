@@ -1,69 +1,54 @@
-# cargar_seed_correcto.py
 import psycopg2
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-password = os.environ.get('DB_PASSWORD')
-user = os.environ.get('DB_USER')
+# Configuració
+DB_SCHEMA = './schema.sql'
+DB_SEED = './seed_data.sql'
 
-# Ruta al seed que QUIERES (el segundo, con muchos registros)
-sql_file_path = './database/seed_data.sql'  # Cambia al nombre correcto
+def run_sql_file(cursor, file_path):
+    print(f"📖 Llegint {file_path}...")
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    cursor.execute(content)
 
-conn = None
 try:
-    print("🔌 Conectando a la base de datos...")
+    print("🔌 Conectant a AWS RDS...")
     conn = psycopg2.connect(
         host='database-1.cveau0o428yi.us-east-1.rds.amazonaws.com',
         port=5432,
         database='postgres',
-        user=user,
-        password=password,
+        user=os.environ.get('DB_USER'),
+        password=os.environ.get('DB_PASSWORD'),
         sslmode='require'
     )
-    
     cur = conn.cursor()
-    
-    # 1. Limpiar todas las tablas
-    print("🧹 Limpiando datos existentes...")
-    cur.execute("TRUNCATE TABLE report, visit, incidence, contract, charger, technician CASCADE;")
+
+    # 1. Executar Esquema (Borra i Crea taules)
+    print("\n🏗️  Generant estructura...")
+    run_sql_file(cur, DB_SCHEMA)
     conn.commit()
-    print("✅ Datos eliminados")
-    
-    # 2. Cargar el nuevo seed
-    print(f"\n📁 Cargando seed: {sql_file_path}")
-    with open(sql_file_path, 'r', encoding='utf-8') as file:
-        sql_content = file.read()
-    
-    # Ejecutar el archivo completo
-    cur.execute(sql_content)
+    print("✅ Esquema creat.")
+
+    # 2. Executar Seed (Inserta dades)
+    print("\n🌱 Inserint dades inicials...")
+    run_sql_file(cur, DB_SEED)
     conn.commit()
-    print("✅ Datos cargados correctamente")
-    
-    # 3. Verificar resultados
-    print("\n📊 VERIFICACIÓN:")
-    tables = ['technician', 'charger', 'contract', 'incidence', 'visit', 'report']
-    for table in tables:
-        cur.execute(f'SELECT COUNT(*) FROM "{table}";')
-        count = cur.fetchone()[0]
-        print(f"  • {table}: {count} registros")
-    
-    # Mostrar algunos ejemplos
-    print("\n🔍 EJEMPLOS DE DATOS CARGADOS:")
-    cur.execute("SELECT charger_id, name FROM charger LIMIT 5;")
-    print("\n  Primeros 5 cargadores:")
-    for row in cur.fetchall():
-        print(f"    ID {row[0]}: {row[1]}")
-    
+    print("✅ Dades carregades.")
+
+    # 3. Verificació ràpida
+    cur.execute("SELECT COUNT(*) FROM incidence;")
+    count = cur.fetchone()[0]
+    print(f"\n🚀 Llest! Tens {count} incidències per entrenar l'XGBoost.")
+
     cur.close()
-    
+
 except Exception as e:
-    print(f"❌ Error: {e}")
-    if conn:
-        conn.rollback()
-    raise
+    print(f"\n❌ ERROR: {e}")
+    if conn: conn.rollback()
 finally:
     if conn:
         conn.close()
-        print("\n🔌 Conexión cerrada.")
+        print("\n🔌 Conexió tancada.")
