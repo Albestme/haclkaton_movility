@@ -41,7 +41,7 @@ const statusLabel: Record<TechnicianStatus, string> = {
   available: "Disponible",
   on_route: "En ruta",
   working: "Trabajando",
-  offline: "Fuera de linea",
+  offline: "Fuera de línea",
 };
 
 export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapProps) {
@@ -186,7 +186,7 @@ export default function TechniciansRoutesMap({ routes }: TechniciansRoutesMapPro
                   <p>Distancia: {formatDistance(route.distanceMeters)}</p>
                   <p>ETA: {formatDuration(route.durationSeconds)}</p>
                   <p className="text-xs text-slate-500">
-                    {route.source === "osrm" ? "Ruta vial (OSRM)" : "Estimacion local"}
+                    {route.source === "osrm" ? "Ruta vial (OSRM)" : "Estimación local"}
                   </p>
                 </div>
               </Popup>

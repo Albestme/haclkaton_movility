@@ -30,7 +30,7 @@ const technicianStatusLabel: Record<TechnicianStatus, string> = {
   available: "Disponible",
   on_route: "En ruta",
   working: "Trabajando",
-  offline: "Fuera de linea",
+  offline: "Fuera de línea",
 };
 
 const orderStatusLabel: Record<WorkOrder["status"], string> = {
@@ -41,14 +41,14 @@ const orderStatusLabel: Record<WorkOrder["status"], string> = {
 };
 
 const priorityLabel = {
-  correctivo_critico: "Correctivo critico",
-  correctivo_no_critico: "Correctivo no critico",
+  correctivo_critico: "Correctivo crítico",
+  correctivo_no_critico: "Correctivo no crítico",
   mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
   puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnostico",
-  high: "Correctivo critico",
+  visita_diagnostico: "Visita de diagnóstico",
+  high: "Correctivo crítico",
   medium: "Mantenimiento preventivo programado",
-  low: "Visita de diagnostico",
+  low: "Visita de diagnóstico",
 } as const;
 
 const priorityColor = {
@@ -153,7 +153,7 @@ export default function OperationsDashboard() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">
             Operary EV Network
           </p>
-          <h1 className="text-2xl font-bold md:text-3xl">Centro de gestion de tecnicos</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">Centro de gestión de técnicos</h1>
           <p className="text-sm text-slate-600 md:text-base">
             Base inicial para asignar incidencias, seguir estados y priorizar mantenimiento de cargadores.
           </p>
@@ -163,12 +163,12 @@ export default function OperationsDashboard() {
           <MetricCard label="OT abiertas" value={metrics.openOrders} />
           <MetricCard label="OT en curso" value={metrics.inProgressOrders} />
           <MetricCard label="OT completadas" value={metrics.completedOrders} />
-          <MetricCard label="Tecnicos disponibles" value={metrics.availableTechnicians} />
+          <MetricCard label="Técnicos disponibles" value={metrics.availableTechnicians} />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
           <div className="space-y-4 rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Ordenes de trabajo</h2>
+            <h2 className="text-lg font-semibold">Órdenes de trabajo</h2>
 
             <div className="grid gap-3 md:grid-cols-4">
               <input
@@ -180,7 +180,7 @@ export default function OperationsDashboard() {
                   }))
                 }
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Buscar OT, ubicacion o nota"
+                placeholder="Buscar OT, ubicación o nota"
               />
 
               <select
@@ -211,11 +211,11 @@ export default function OperationsDashboard() {
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
               >
                 <option value="all">Todas las prioridades</option>
-                <option value="correctivo_critico">Correctivo critico</option>
-                <option value="correctivo_no_critico">Correctivo no critico</option>
+                <option value="correctivo_critico">Correctivo crítico</option>
+                <option value="correctivo_no_critico">Correctivo no crítico</option>
                 <option value="mantenimiento_preventivo_programado">Mantenimiento preventivo programado</option>
                 <option value="puesta_en_marcha">Puesta en marcha</option>
-                <option value="visita_diagnostico">Visita de diagnostico</option>
+                <option value="visita_diagnostico">Visita de diagnóstico</option>
               </select>
 
               <select
@@ -244,7 +244,7 @@ export default function OperationsDashboard() {
                     <th className="px-3 py-3">Sitio</th>
                     <th className="px-3 py-3">Prioridad</th>
                     <th className="px-3 py-3">Estado</th>
-                    <th className="px-3 py-3">Tecnico</th>
+                    <th className="px-3 py-3">Técnico</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -280,9 +280,9 @@ export default function OperationsDashboard() {
 
           <aside className="space-y-4">
             <div className="rounded-2xl bg-white p-5 shadow-sm">
-              <h3 className="mb-3 text-lg font-semibold">Mapa de tecnicos (OpenStreetMap)</h3>
+              <h3 className="mb-3 text-lg font-semibold">Mapa de técnicos (OpenStreetMap)</h3>
               <p className="mb-3 text-sm text-slate-500">
-                Cada tecnico aparece como un punto geolocalizado.
+                Cada técnico aparece como un punto geolocalizado.
               </p>
               <TechniciansMap technicians={technicians} />
             </div>
@@ -295,7 +295,7 @@ export default function OperationsDashboard() {
                     <span className="font-semibold">Sitio:</span> {selectedOrder.siteName}
                   </p>
                   <p>
-                    <span className="font-semibold">Direccion:</span> {selectedOrder.address}
+                    <span className="font-semibold">Dirección:</span> {selectedOrder.address}
                   </p>
                   <p>
                     <span className="font-semibold">Conector:</span> {selectedOrder.connectorType}
@@ -320,7 +320,7 @@ export default function OperationsDashboard() {
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm">
-              <h3 className="mb-3 text-lg font-semibold">Sugerencia de asignacion</h3>
+              <h3 className="mb-3 text-lg font-semibold">Sugerencia de asignación</h3>
               {selectedOrder ? (
                 <div className="space-y-2 text-sm">
                   {suggestedTechnicians.length > 0 ? (
@@ -344,7 +344,7 @@ export default function OperationsDashboard() {
                       );
                     })
                   ) : (
-                    <p className="text-slate-500">No hay tecnicos disponibles en este momento.</p>
+                    <p className="text-slate-500">No hay técnicos disponibles en este momento.</p>
                   )}
                 </div>
               ) : (
@@ -353,12 +353,12 @@ export default function OperationsDashboard() {
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm">
-              <h3 className="mb-3 text-lg font-semibold">Equipo tecnico</h3>
+              <h3 className="mb-3 text-lg font-semibold">Equipo técnico</h3>
               <div className="space-y-2">
                 {technicians.map((technician) => (
                   <div key={technician.id} className="rounded-lg border border-slate-200 p-3 text-sm">
                     <p className="font-medium">{technician.name}</p>
-                    <p className="text-xs text-slate-500">Ultimo check-in: {technician.lastCheckIn}</p>
+                    <p className="text-xs text-slate-500">Último check-in: {technician.lastCheckIn}</p>
                     <div className="mt-2 flex items-center gap-2">
                       <span className="text-xs text-slate-500">Estado:</span>
                       <select

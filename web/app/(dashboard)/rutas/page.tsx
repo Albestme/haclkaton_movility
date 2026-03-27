@@ -14,7 +14,7 @@ const statusLabel: Record<TechnicianStatus, string> = {
   available: "Disponible",
   on_route: "En ruta",
   working: "Trabajando",
-  offline: "Fuera de linea",
+  offline: "Fuera de línea",
 };
 
 function buildRoutePoints(start: GeoPoint, end: GeoPoint): GeoPoint[] {
@@ -56,7 +56,7 @@ export default function RutasPage() {
     <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6">
       <header className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Plan de rutas</p>
-        <h1 className="mt-2 text-2xl font-bold md:text-3xl">Rutas asignadas de tecnicos</h1>
+        <h1 className="mt-2 text-2xl font-bold md:text-3xl">Rutas asignadas de técnicos</h1>
         <p className="mt-2 text-sm text-slate-600 md:text-base">
           Visualiza en OpenStreetMap el recorrido asignado a cada trabajador con orden activa.
         </p>
@@ -78,12 +78,12 @@ export default function RutasPage() {
         </header>
 
         {routes.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-500">Sin tecnicos con orden activa.</p>
+          <p className="px-4 py-6 text-sm text-slate-500">Sin técnicos con orden activa.</p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Tecnico</th>
+                <th className="px-4 py-3">Técnico</th>
                 <th className="px-4 py-3">OT</th>
                 <th className="px-4 py-3">Destino</th>
                 <th className="px-4 py-3">Estado</th>

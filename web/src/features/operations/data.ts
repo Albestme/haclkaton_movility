@@ -3,16 +3,16 @@ import { Technician, WorkOrder } from "@/src/features/operations/types";
 export const initialTechnicians: Technician[] = [
   {
     id: "tec-01",
-    name: "Ana Lopez",
+    name: "Ana López",
     zone: "Barcelona Norte",
     location: { lat: 41.4182, lng: 2.1734 },
-    skills: ["CCS", "AC Type 2", "Diagnostico remoto"],
+    skills: ["CCS", "AC Type 2", "Diagnóstico remoto"],
     status: "available",
     lastCheckIn: "08:12",
   },
   {
     id: "tec-02",
-    name: "Javier Martin",
+    name: "Javier Martín",
     zone: "Barcelona Sur",
     location: { lat: 41.3597, lng: 2.1388 },
     skills: ["CCS", "Mantenimiento preventivo"],
@@ -22,7 +22,7 @@ export const initialTechnicians: Technician[] = [
   },
   {
     id: "tec-03",
-    name: "Lucia Perez",
+    name: "Lucía Pérez",
     zone: "Tarragona",
     location: { lat: 41.1178, lng: 1.2445 },
     skills: ["CHAdeMO", "AC Type 2"],
@@ -61,7 +61,7 @@ export const initialWorkOrders: WorkOrder[] = [
     priority: "correctivo_critico",
     status: "assigned",
     scheduledAt: "09:00",
-    notes: "Fallo de comunicacion OCPP intermitente.",
+    notes: "Fallo de comunicación OCPP intermitente.",
     technicianId: "tec-02",
   },
   {
@@ -74,7 +74,7 @@ export const initialWorkOrders: WorkOrder[] = [
     priority: "mantenimiento_preventivo_programado",
     status: "pending",
     scheduledAt: "10:30",
-    notes: "Revision de mantenimiento trimestral.",
+    notes: "Revisión de mantenimiento trimestral.",
   },
   {
     id: "ot-2026-106",
@@ -91,7 +91,7 @@ export const initialWorkOrders: WorkOrder[] = [
   },
   {
     id: "ot-2026-107",
-    siteName: "Area de Servicio AP-7",
+    siteName: "Área de Servicio AP-7",
     city: "Girona",
     address: "Salida 9 AP-7",
     createdAt: "2026-03-24T17:10:00Z",
@@ -99,7 +99,7 @@ export const initialWorkOrders: WorkOrder[] = [
     priority: "correctivo_no_critico",
     status: "pending",
     scheduledAt: "12:00",
-    notes: "Actualizacion de firmware planificada.",
+    notes: "Actualización de firmware planificada.",
   },
 ];
 

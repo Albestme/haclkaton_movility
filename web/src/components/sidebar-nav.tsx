@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
   { href: "/control", label: "Control", shortLabel: "CT" },
   { href: "/rutas", label: "Rutas", shortLabel: "RT" },
   { href: "/tareas", label: "Tareas", shortLabel: "TS" },
-  { href: "/tecnicos", label: "Tecnicos", shortLabel: "TC" },
+  { href: "/tecnicos", label: "Técnicos", shortLabel: "TC" },
 ];
 
 type SidebarNavProps = {
@@ -39,7 +39,7 @@ export default function SidebarNav({ isSidebarOpen, onToggleSidebar }: SidebarNa
           <button
             type="button"
             onClick={onToggleSidebar}
-            aria-label={isSidebarOpen ? "Ocultar menu lateral" : "Mostrar menu lateral"}
+            aria-label={isSidebarOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
             aria-expanded={isSidebarOpen}
             className="mt-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800 text-white hover:bg-zinc-700"
           >

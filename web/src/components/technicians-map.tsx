@@ -19,7 +19,7 @@ const statusLabel: Record<TechnicianStatus, string> = {
   available: "Disponible",
   on_route: "En ruta",
   working: "Trabajando",
-  offline: "Fuera de linea",
+  offline: "Fuera de línea",
 };
 
 export default function TechniciansMap({ technicians }: TechniciansMapProps) {
@@ -70,7 +70,7 @@ export default function TechniciansMap({ technicians }: TechniciansMapProps) {
               <p className="font-semibold">{technician.name}</p>
               <p>Zona: {technician.zone}</p>
               <p>Estado: {statusLabel[technician.status]}</p>
-              <p>Ultimo check-in: {technician.lastCheckIn}</p>
+              <p>Último check-in: {technician.lastCheckIn}</p>
             </div>
           </Popup>
         </CircleMarker>

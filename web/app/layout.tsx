@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Operary EV | Gestion de tecnicos",
-  description: "Base operativa para asignar y seguir trabajos de tecnicos de cargadores electricos.",
+  title: "Operary EV | Gestión de técnicos",
+  description: "Base operativa para asignar y seguir trabajos de técnicos de cargadores eléctricos.",
 };
 
 export default function RootLayout({

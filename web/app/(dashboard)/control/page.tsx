@@ -6,10 +6,10 @@ import { countOrdersInLastHours } from "@/src/features/operations/metrics";
 import { WorkOrder } from "@/src/features/operations/types";
 
 const intervalOptions = [
-  { hours: 6, label: "Ultimas 6 horas" },
-  { hours: 12, label: "Ultimas 12 horas" },
-  { hours: 24, label: "Ultimas 24 horas" },
-  { hours: 48, label: "Ultimas 48 horas" },
+  { hours: 6, label: "Últimas 6 horas" },
+  { hours: 12, label: "Últimas 12 horas" },
+  { hours: 24, label: "Últimas 24 horas" },
+  { hours: 48, label: "Últimas 48 horas" },
 ];
 
 const statusOptions = [
@@ -28,14 +28,14 @@ const statusLabel: Record<WorkOrder["status"], string> = {
 };
 
 const priorityLabel: Record<WorkOrder["priority"], string> = {
-  correctivo_critico: "Correctivo critico",
-  correctivo_no_critico: "Correctivo no critico",
+  correctivo_critico: "Correctivo crítico",
+  correctivo_no_critico: "Correctivo no crítico",
   mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
   puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnostico",
-  high: "Correctivo critico",
+  visita_diagnostico: "Visita de diagnóstico",
+  high: "Correctivo crítico",
   medium: "Mantenimiento preventivo programado",
-  low: "Visita de diagnostico",
+  low: "Visita de diagnóstico",
 };
 
 function getReferenceDate() {
@@ -84,7 +84,7 @@ export default function ControlPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Panel de control</p>
         <h1 className="mt-2 text-2xl font-bold md:text-3xl">Entradas de tareas por tiempo</h1>
         <p className="mt-2 text-sm text-slate-600 md:text-base">
-          Selecciona un intervalo para ver cuantas tareas entraron en ese periodo.
+          Selecciona un intervalo para ver cuántas tareas entraron en ese período.
         </p>
       </header>
 
@@ -107,7 +107,7 @@ export default function ControlPage() {
           </select>
 
           <p className="mt-4 text-xs text-slate-500">
-            Referencia de calculo: {referenceDate.toLocaleString("es-ES")}
+            Referencia de cálculo: {referenceDate.toLocaleString("es-ES")}
           </p>
 
           <label htmlFor="status-filter" className="mb-2 mt-4 block text-sm font-medium text-slate-700">

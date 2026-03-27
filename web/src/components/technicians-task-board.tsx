@@ -12,15 +12,15 @@ const technicianStatusLabel: Record<TechnicianStatus, string> = {
   available: "Disponible",
   on_route: "En ruta",
   working: "Trabajando",
-  offline: "Fuera de linea",
+  offline: "Fuera de línea",
 };
 
 const priorityLabel: Record<WorkOrderPriority, string> = {
-  correctivo_critico: "Correctivo critico",
-  correctivo_no_critico: "Correctivo no critico",
+  correctivo_critico: "Correctivo crítico",
+  correctivo_no_critico: "Correctivo no crítico",
   mantenimiento_preventivo_programado: "Mantenimiento preventivo",
   puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnostico",
+  visita_diagnostico: "Visita de diagnóstico",
   high: "Alta",
   medium: "Media",
   low: "Baja",
@@ -41,6 +41,7 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
   const [orders, setOrders] = useState<WorkOrder[]>(initialOrders);
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   const ordersByTechnician = useMemo(() => {
     return technicians.reduce<Record<string, WorkOrder[]>>((acc, technician) => {
@@ -99,8 +100,46 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
     setDropTarget(null);
   }
 
+  function handleSaveSelection() {
+    try {
+      localStorage.setItem("technicians_task_board_orders", JSON.stringify(orders));
+      setSavedMessage("Selección guardada correctamente");
+      setTimeout(() => setSavedMessage(null), 3000);
+    } catch (error) {
+      setSavedMessage("Error al guardar la selección");
+      setTimeout(() => setSavedMessage(null), 3000);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Asignación de tareas</h2>
+          <p className="text-sm text-slate-600">Arrastra tareas para reasignarlas entre técnicos</p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={handleSaveSelection}
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Guardar selección
+          </button>
+          {savedMessage && (
+            <div className={`text-xs font-medium rounded px-3 py-1 ${
+              savedMessage.includes("Error") 
+                ? "bg-red-100 text-red-700" 
+                : "bg-emerald-100 text-emerald-700"
+            }`}>
+              {savedMessage}
+            </div>
+          )}
+        </div>
+      </div>
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {technicians.map((technician) => {
           const assignedOrders = ordersByTechnician[technician.id] ?? [];
@@ -143,7 +182,7 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
                   ))
                 ) : (
                   <div className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-sm text-slate-500">
-                    Suelta aqui una tarea para asignarla.
+                    Suelta aquí una tarea para asignarla.
                   </div>
                 )}
               </div>
@@ -186,7 +225,7 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
             ))
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">
-              No hay tareas pendientes de asignacion.
+              No hay tareas pendientes de asignación.
             </div>
           )}
         </div>

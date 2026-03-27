@@ -12,14 +12,14 @@ const statusLabel: Record<WorkOrder["status"], string> = {
 };
 
 const priorityLabel: Record<WorkOrder["priority"], string> = {
-  correctivo_critico: "Correctivo critico",
-  correctivo_no_critico: "Correctivo no critico",
+  correctivo_critico: "Correctivo crítico",
+  correctivo_no_critico: "Correctivo no crítico",
   mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
   puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnostico",
-  high: "Correctivo critico",
+  visita_diagnostico: "Visita de diagnóstico",
+  high: "Correctivo crítico",
   medium: "Mantenimiento preventivo programado",
-  low: "Visita de diagnostico",
+  low: "Visita de diagnóstico",
 };
 
 const priorityClassName: Record<WorkOrder["priority"], string> = {
@@ -40,7 +40,7 @@ export default function TareasPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Panel de tareas</p>
         <h1 className="mt-2 text-2xl font-bold md:text-3xl">Todas las tareas del sistema</h1>
         <p className="mt-2 text-sm text-slate-600 md:text-base">
-          Vista consolidada de ordenes de trabajo activas para planificar prioridad, estado y asignacion.
+          Vista consolidada de órdenes de trabajo activas para planificar prioridad, estado y asignación.
         </p>
       </header>
 
@@ -54,7 +54,7 @@ export default function TareasPage() {
               <th className="px-4 py-3">Conector</th>
               <th className="px-4 py-3">Prioridad</th>
               <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">Tecnico</th>
+              <th className="px-4 py-3">Técnico</th>
               <th className="px-4 py-3">Horario</th>
             </tr>
           </thead>
