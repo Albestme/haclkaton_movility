@@ -1,4 +1,4 @@
-node_id,latitude,longitude,address,city,priority,work_type
+node_id,address,latitude,longitude,city,priority,work_type
 NZ05DQ293BKMKCXYCD7I,Ajuntament de Cabrera de Mar - LAFON EdRR 3,41.51103,2.401058,"Av. Burriac, 24",0,Commissioning
 P99LQFB1FKNWPYFMH5SX,Constantí - INGETEAM EdRSR 1,41.152386,1.216997,"Av. Onze De Setembre, 5, 43120 Constantí, Tarragona, Spain",1,Preventive
 PJ4XQUW9OJIT85ZHOCUG,Unknown,41.748814,1.861665,"Cataluña 08272 Es, 08272, Barcelona, Spain",1,Preventive

@@ -12,25 +12,25 @@ import numpy as np
 
 WORK_START = 8 * 60  # 08:00 = 480 minutes
 EVOLUTION_ITER = 30
-EVOLUTION_SIZE = 14
+EVOLUTION_SIZE = 18
 
 def default_params():
     return {
         "time_budget": 8 * 60,  # minutes
-        "priority_weight": 10.0,
-        "priority_penalization": 25.0,
-        "travel_weight": 0.8,
+        "priority_weight": 20.0,
+        "priority_penalization": 50.0,
+        "travel_weight": 1.4,
         "aging_factor": 0.05,
-        "exploration_factor": 1.1,
-        "num_simulations": 20,
+        "exploration_factor": 1.4,
+        "num_simulations": 30,
         "num_simulations_local": 450,
-        "budget": 50,
-        "radius": 60.0,  # distance threshold in minutes
+        "budget": 100,
+        "radius": 75.0,  # distance threshold in minutes
         "freeze_window": 30,  # minutes
         "critical_threshold": 3,
-        "undertime_penalty": 90,
-        "overtime_penalty": 250,
-        "grace_period": 20
+        "undertime_penalty": 30,
+        "overtime_penalty": 125,
+        "grace_period": 25
     }
 
 # =========================
@@ -308,27 +308,38 @@ def reschedule(new_task, workers, all_tasks, params):
 # TEST / SIMULATION
 # =========================
 
-def read_tasks_from_csv(filename, limit=100):
-    tasks = []
+csv_data = []
+last_row = 0
+total_lines = 0
+_CSV_LOADED = False
 
+def load_csv(filename):
+    global csv_data, total_lines
     with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
+        csv_data = list(reader)
+        total_lines = len(csv_data)
 
-        for i, row in enumerate(reader):
-            if limit and i >= limit:
-                break
+def read_tasks_from_csv(limit=100):
+    if not _CSV_LOADED: load_csv("./data/etecnic_nodes_priority.csv")
+    global last_row, total_lines
+    tasks = []
 
-            task = Task(
-                id=int(row["id"]),
-                lat=float(row["lat"]),
-                lon=float(row["lon"]),
-                priority=int(row["priority"]),
-                service_time=float(row["service_time"]),
-                created_at=480,
-                av=True
-            )
+    indices = [(last_row + i) % total_lines for i in range(limit)]
+    for i in indices:
+        row = csv_data[i]
+        task = Task(
+            id=row["node_id"],
+            lat=float(row["latitude"]),
+            lon=float(row["longitude"]),
+            priority=int(row["priority"]),
+            service_time=random.uniform(30, 180),
+            created_at=480,
+            av=True
+        )
+        tasks.append(task)
 
-            tasks.append(task)
+    last_row = (last_row + limit) % total_lines
     return tasks
 
 def generate_tasks(n):
@@ -346,6 +357,17 @@ def generate_tasks(n):
     return tasks
 
 
+def get_workers():
+    workers = []
+    workers.clear()
+    workers.append(Worker(0,41.119626,1.219011)) # Torreforta
+    workers.append(Worker(1,41.339448,2.040250)) # Sant Boi de Llobregat
+    workers.append(Worker(2,41.438878,2.212076)) # Santa Coloma de Gramenet
+    workers.append(Worker(3,41.978212,2.826125)) # Girona
+    workers.append(Worker(4,41.649243,1.140919)) # Tarrega
+    return workers
+
+
 def generate_workers(n):
     workers = []
     for i in range(n):
@@ -360,8 +382,8 @@ def generate_workers(n):
 def run_simulation():
     params = default_params()
 
-    workers = generate_workers(4)
-    tasks = generate_tasks(25)
+    workers = get_workers()
+    tasks = read_tasks_from_csv(25)
     #tasks = read_tasks_from_csv("tasks.csv", limit=100)
 
     start = time.time()
@@ -370,12 +392,14 @@ def run_simulation():
 
     print("Initial solution time: ", end - start, " | Score: ", evaluate(solution, tasks, params))
 
+    done = []
     for w in workers:
         w.route = solution[w.id]
         print("Worker ", w.id, ":")
         prev_task = Task(-1,w.lat,w.lon,6,0)
         local_time = 0
         for task in w.route:
+            done.append(task)
             try:
                 step = travel_time(prev_task, task, local_time)
                 print(f"\t({local_time:.2f})- Trip from {prev_task.id if prev_task.id!=-1 else 'Start'} to {task.id} takes {step:.2f}")
@@ -395,7 +419,8 @@ def run_simulation():
     
     print("Pending tasks:")
     for task in tasks:
-        print(f"\t- Task {task.id} Duration: {task.service_time:.2f} Priority: {task.priority}")
+        if task not in done:
+            print(f"\t- Task {task.id} Duration: {task.service_time:.2f} Priority: {task.priority}")
 
     ## simulate new task
     #new_task = Task(999, 50, 50, 6, 30)
@@ -505,8 +530,8 @@ def evolutionary_tuning():
 
     for generation in range(EVOLUTION_ITER):
         scored = []
-        workers = generate_workers(3)
-        tasks = generate_tasks(25)
+        workers = get_workers()
+        tasks = read_tasks_from_csv(20)
 
         for p in population:
             sol = monte_carlo_learning(workers, tasks, p)
@@ -515,7 +540,7 @@ def evolutionary_tuning():
 
         scored.sort(reverse=True, key=lambda x: x[0])
 
-        population = [p for _, p in scored[:5]]
+        population = [p for _, p in scored[:int(EVOLUTION_ITER*0.33)]]
 
         while len(population) < 10:
             parent = random.choice(population)
@@ -527,6 +552,6 @@ def evolutionary_tuning():
 
 
 if __name__ == "__main__":
-    #run_simulation()
-    best_params = evolutionary_tuning()
-    print("Best params:", best_params)
+    run_simulation()
+    #best_params = evolutionary_tuning()
+    #print("Best params:", best_params)
