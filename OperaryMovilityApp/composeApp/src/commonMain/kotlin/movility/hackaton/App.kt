@@ -1,10 +1,11 @@
 package movility.hackaton
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,10 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Home
@@ -78,6 +77,7 @@ fun App() {
         var selectedTask by remember { mutableStateOf<RouteTask?>(null) }
         var selectedTabName by rememberSaveable { mutableStateOf(AppTab.RUTA.name) }
         var activeTaskSession by remember { mutableStateOf<ActiveTaskSession?>(null) }
+        var requestedConversationId by rememberSaveable { mutableStateOf<String?>(null) }
 
         val selectedTypeFilter = selectedTypeFilterName?.let { name -> TaskType.entries.firstOrNull { it.name == name } }
         val selectedSortOption = TaskSortOption.entries.firstOrNull { it.name == selectedSortOptionName }
@@ -147,12 +147,17 @@ fun App() {
                         modifier = Modifier.padding(innerPadding),
                         technicians = technicians,
                         onCallTechnician = { technician -> uriHandler.openUri(phoneDialUri(technician.phone)) },
-                        onOpenTechnicianLocation = { technician ->
-                            uriHandler.openUri(googleMapsPinUrl(technician.latitude, technician.longitude, technician.name))
+                        onSendMessage = { technician ->
+                            requestedConversationId = conversationIdForTechnician(technician)
+                            selectedTabName = AppTab.MENSAJES.name
                         },
                     )
 
-                    AppTab.MENSAJES -> MessagesTabContent(modifier = Modifier.padding(innerPadding))
+                    AppTab.MENSAJES -> MessagesTabContent(
+                        modifier = Modifier.padding(innerPadding),
+                        selectedConversationIdRequest = requestedConversationId,
+                        onConversationRequestConsumed = { requestedConversationId = null },
+                    )
                 }
             }
 
@@ -196,55 +201,56 @@ private fun RouteTabContent(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            HeaderSummary(
-                pendingCount = pendingCount,
-                completedCount = completedCount,
-                visiblePendingCount = visiblePendingCount,
-                visibleTotalCount = visibleTasks.size,
-                totalCount = tasks.size,
-            )
+            item {
+                HeaderSummary(
+                    pendingCount = pendingCount,
+                    completedCount = completedCount,
+                    visiblePendingCount = visiblePendingCount,
+                    visibleTotalCount = visibleTasks.size,
+                    totalCount = tasks.size,
+                )
+            }
 
-            Text(
-                text = "Tipo de tarea",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TaskTypeFilterDropdown(
-                selectedType = selectedTypeFilter,
-                onTypeSelected = onTypeFilterChange,
-            )
+            item {
+                Text(
+                    text = "Tipo de tarea",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                TaskTypeFilterDropdown(
+                    selectedType = selectedTypeFilter,
+                    onTypeSelected = onTypeFilterChange,
+                )
+            }
 
-            Text(
-                text = "Orden",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TaskSortRow(
-                selectedSortOption = selectedSortOption,
-                onSortSelected = onSortOptionChange,
-            )
+            item {
+                Text(
+                    text = "Orden",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                TaskSortRow(
+                    selectedSortOption = selectedSortOption,
+                    onSortSelected = onSortOptionChange,
+                )
+            }
 
-            AnimatedContent(targetState = visibleTasks, label = "tasks-filter-animation") { tasksForView ->
-                val taskListState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    state = taskListState,
-                ) {
-                    items(items = tasksForView, key = { it.id }) { task ->
-                        RouteTaskRow(
-                            task = task,
-                            onTaskChecked = { checked -> onTaskChecked(task, checked) },
-                            onTaskClick = { onTaskClick(task) },
-                        )
-                    }
-                }
+            items(items = visibleTasks, key = { it.id }) { task ->
+                RouteTaskRow(
+                    task = task,
+                    onTaskChecked = { checked -> onTaskChecked(task, checked) },
+                    onTaskClick = { onTaskClick(task) },
+                )
             }
         }
     }
@@ -255,7 +261,7 @@ private fun TechniciansTabContent(
     modifier: Modifier,
     technicians: List<Technician>,
     onCallTechnician: (Technician) -> Unit,
-    onOpenTechnicianLocation: (Technician) -> Unit,
+    onSendMessage: (Technician) -> Unit,
 ) {
     var selectedTechnicianByMap by remember { mutableStateOf<Technician?>(null) }
 
@@ -263,96 +269,96 @@ private fun TechniciansTabContent(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = "Ubicacion de tecnicos",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Consulta donde esta cada tecnico y contactalo rapido.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            item {
+                Text(
+                    text = "Ubicacion de tecnicos",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            item {
+                Text(
+                    text = "Consulta donde esta cada tecnico y contactalo rapido.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
-            TechniciansRealMap(
-                modifier = Modifier.fillMaxWidth(),
-                technicians = technicians,
-                onTechnicianClick = { selectedTechnicianByMap = it },
-            )
+            item {
+                TechniciansRealMap(
+                    modifier = Modifier.fillMaxWidth(),
+                    technicians = technicians,
+                    onTechnicianClick = { selectedTechnicianByMap = it },
+                )
+            }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                state = rememberLazyListState(),
-            ) {
-                items(technicians, key = { it.id }) { technician ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+            items(technicians, key = { it.id }) { technician ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(text = technician.name, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                text = technician.address,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { onCallTechnician(technician) }) {
-                                    Text("Llamar")
-                                }
-                                OutlinedButton(onClick = { onOpenTechnicianLocation(technician) }) {
-                                    Text("Ver en mapa")
-                                }
+                        Text(text = technician.name, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = technician.address,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { onCallTechnician(technician) }) {
+                                Text("Llamar")
+                            }
+                            OutlinedButton(onClick = { onSendMessage(technician) }) {
+                                Text("Enviar mensaje")
                             }
                         }
                     }
                 }
             }
+        }
 
-            selectedTechnicianByMap?.let { technician ->
-                AlertDialog(
-                    onDismissRequest = { selectedTechnicianByMap = null },
-                    title = { Text(technician.name) },
-                    text = {
-                        Text(
-                            text = technician.address,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            onCallTechnician(technician)
-                            selectedTechnicianByMap = null
-                        }) {
-                            Text("Llamar")
-                        }
-                    },
-                    dismissButton = {
-                        OutlinedButton(onClick = {
-                            onOpenTechnicianLocation(technician)
-                            selectedTechnicianByMap = null
-                        }) {
-                            Text("Abrir mapa")
-                        }
-                    },
-                )
-            }
+        selectedTechnicianByMap?.let { technician ->
+            AlertDialog(
+                onDismissRequest = { selectedTechnicianByMap = null },
+                title = { Text(technician.name) },
+                text = {
+                    Text(
+                        text = technician.address,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        onCallTechnician(technician)
+                        selectedTechnicianByMap = null
+                    }) {
+                        Text("Llamar")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = {
+                        onSendMessage(technician)
+                        selectedTechnicianByMap = null
+                    }) {
+                        Text("Enviar mensaje")
+                    }
+                },
+            )
         }
     }
 }
@@ -392,6 +398,7 @@ private fun ActiveTaskScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {

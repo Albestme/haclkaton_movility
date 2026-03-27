@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +63,39 @@ data class ChatConversation(
 
 fun sampleConversations(): List<ChatConversation> {
     return listOf(
+        ChatConversation(
+            id = "conv-tec-01",
+            title = "Carlos Rojas",
+            subtitle = "Tecnico en campo",
+            lastMessage = "Ya revise el cargador 2. Te comparto fotos en 5 min.",
+            messages = listOf(
+                ChatMessage("t1", "Carlos", "Estoy en Estacion Centro revisando la alarma critica.", "08:40", false),
+                ChatMessage("t2", "Yo", "Perfecto, cuando termines me mandas estado y repuestos usados.", "08:42", true),
+                ChatMessage("t3", "Carlos", "Ya revise el cargador 2. Te comparto fotos en 5 min.", "08:45", false),
+            ),
+        ),
+        ChatConversation(
+            id = "conv-tec-02",
+            title = "Luisa Diaz",
+            subtitle = "Tecnica en campo",
+            lastMessage = "Voy para la estacion norte. Llego en 15 minutos.",
+            messages = listOf(
+                ChatMessage("t4", "Luisa", "Tengo modulo de repuesto disponible.", "09:10", false),
+                ChatMessage("t5", "Yo", "Genial, prioriza la visita de diagnostico en Parque Norte.", "09:12", true),
+                ChatMessage("t6", "Luisa", "Voy para la estacion norte. Llego en 15 minutos.", "09:14", false),
+            ),
+        ),
+        ChatConversation(
+            id = "conv-tec-03",
+            title = "Andres Mejia",
+            subtitle = "Tecnico en campo",
+            lastMessage = "Termine preventivo. Quedo pendiente ajuste de firmware.",
+            messages = listOf(
+                ChatMessage("t7", "Andres", "En sitio todo estable despues de pruebas.", "10:02", false),
+                ChatMessage("t8", "Yo", "Perfecto, deja evidencia en el informe.", "10:03", true),
+                ChatMessage("t9", "Andres", "Termine preventivo. Quedo pendiente ajuste de firmware.", "10:06", false),
+            ),
+        ),
         ChatConversation(
             id = "conv-operaciones",
             title = "Centro de Operaciones",
@@ -97,10 +131,24 @@ fun sampleConversations(): List<ChatConversation> {
     )
 }
 
+fun conversationIdForTechnician(technician: Technician): String {
+    return "conv-${technician.id.lowercase()}"
+}
+
 @Composable
-fun MessagesTabContent(modifier: Modifier) {
+fun MessagesTabContent(
+    modifier: Modifier,
+    selectedConversationIdRequest: String? = null,
+    onConversationRequestConsumed: () -> Unit = {},
+) {
     val conversations = remember { sampleConversations() }
     var selectedConversationId by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(selectedConversationIdRequest) {
+        if (selectedConversationIdRequest != null) {
+            selectedConversationId = selectedConversationIdRequest
+            onConversationRequestConsumed()
+        }
+    }
     val selectedConversation = conversations.firstOrNull { it.id == selectedConversationId }
 
     if (selectedConversation == null) {
