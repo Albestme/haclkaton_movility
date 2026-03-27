@@ -2,8 +2,9 @@ package movility.hackaton
 
 data class Technician(
     val id: String,
+    val backendId: Int? = null,
     val name: String,
-    val phone: String,
+    val phone: String? = null,
     val address: String,
     val latitude: Double,
     val longitude: Double,
@@ -36,7 +37,8 @@ private fun encodeForUriComponent(value: String): String {
 fun sampleTechnicians(): List<Technician> {
     return listOf(
         Technician(
-            id = "TEC-01",
+            id = "tec-1",
+            backendId = 1,
             name = "Carlos Rojas",
             phone = "+573001112233",
             address = "Zona Norte - Calle 100 #15-20",
@@ -44,7 +46,8 @@ fun sampleTechnicians(): List<Technician> {
             longitude = -74.049,
         ),
         Technician(
-            id = "TEC-02",
+            id = "tec-2",
+            backendId = 2,
             name = "Luisa Díaz",
             phone = "+573004445566",
             address = "Zona Centro - Av. 7 #45-10",
@@ -52,7 +55,8 @@ fun sampleTechnicians(): List<Technician> {
             longitude = -74.069,
         ),
         Technician(
-            id = "TEC-03",
+            id = "tec-3",
+            backendId = 3,
             name = "Andrés Mejía",
             phone = "+573007778899",
             address = "Zona Sur - Calle 30 Sur #52-11",
