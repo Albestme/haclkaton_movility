@@ -95,7 +95,7 @@ def lambda_handler(event, context):
         )
         
         # 2. Descarregar NOMÉS la incidència nova
-        query_select = "SELECT * FROM INCIDENCE WHERE id = %s"
+        query_select = "SELECT * FROM INCIDENCE WHERE incidence_id = %s"
         df_input = pd.read_sql(query_select, conn, params=(incidence_id,))
         
         if df_input.empty:
@@ -110,7 +110,7 @@ def lambda_handler(event, context):
         query_update = """
             UPDATE INCIDENCE 
             SET estimated_duration_min = %s 
-            WHERE id = %s
+            WHERE incidence_id = %s
         """
         cursor.execute(query_update, (minuts_estimats, incidence_id))
         conn.commit()
