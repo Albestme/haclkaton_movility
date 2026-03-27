@@ -10,52 +10,42 @@ export function buildDashboardMetrics(
   orders: WorkOrder[],
 ): DashboardMetrics {
   return {
-    openOrders: orders.filter((order) => order.status === "pending" || order.status === "assigned")
-      .length,
-    inProgressOrders: orders.filter((order) => order.status === "in_progress").length,
-    completedOrders: orders.filter((order) => order.status === "done").length,
+    openOrders: orders.filter((order) => order.status !== "Tancada").length,
+    inProgressOrders: orders.filter((order) => order.status === "En curs").length,
+    completedOrders: orders.filter((order) => order.status === "Tancada").length,
     availableTechnicians: technicians.filter((technician) => technician.status === "available").length,
   };
 }
 
 export function getSuggestedTechnicians(
-  order: WorkOrder,
+  _order: WorkOrder,
   technicians: Technician[],
 ): Technician[] {
   return technicians
     .filter((technician) => technician.status === "available")
-    .sort((a, b) => {
-      const aHasSkill = a.skills.includes(order.connectorType) ? 1 : 0;
-      const bHasSkill = b.skills.includes(order.connectorType) ? 1 : 0;
-
-      if (aHasSkill !== bHasSkill) {
-        return bHasSkill - aHasSkill;
-      }
-
-      return a.name.localeCompare(b.name);
-    });
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function filterOrders(orders: WorkOrder[], filters: OrderFilters): WorkOrder[] {
   return orders.filter((order) => {
-    const cityPass = filters.city === "all" || order.city === filters.city;
+    const chargerPass = filters.charger === "all" || String(order.charger_id) === filters.charger;
     const priorityPass = filters.priority === "all" || order.priority === filters.priority;
     const statusPass = filters.status === "all" || order.status === filters.status;
-    const text = `${order.id} ${order.siteName} ${order.address} ${order.notes}`.toLowerCase();
+    const text = `${order.incidence_id} ${order.charger_id} ${order.description}`.toLowerCase();
     const searchPass = !filters.search || text.includes(filters.search.toLowerCase());
 
-    return cityPass && priorityPass && statusPass && searchPass;
+    return chargerPass && priorityPass && statusPass && searchPass;
   });
 }
 
 export function nextOrderStatus(current: WorkOrder["status"]): WorkOrder["status"] {
-  if (current === "pending") {
-    return "assigned";
+  if (current === "Nova") {
+    return "Assignada";
   }
-  if (current === "assigned") {
-    return "in_progress";
+  if (current === "Assignada") {
+    return "En curs";
   }
-  return "done";
+  return "Tancada";
 }
 
 export function countOrdersInLastHours(
@@ -67,7 +57,7 @@ export function countOrdersInLastHours(
   const referenceMs = referenceDate.getTime();
 
   return orders.filter((order) => {
-    const createdMs = new Date(order.createdAt).getTime();
+    const createdMs = new Date(order.reported_at).getTime();
 
     if (!Number.isFinite(createdMs)) {
       return false;

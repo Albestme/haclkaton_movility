@@ -26,30 +26,30 @@ function runSmoke() {
   const metrics = buildDashboardMetrics(initialTechnicians, initialWorkOrders);
   assert(metrics.openOrders >= 1, "Debe haber ordenes abiertas en la semilla");
 
-  const barcelonaOrders = filterOrders(initialWorkOrders, {
-    city: "Barcelona",
+  const chargerOrders = filterOrders(initialWorkOrders, {
+    charger: "15",
     priority: "all",
     status: "all",
     search: "",
   });
-  assert(barcelonaOrders.length === 1, "Se esperaba 1 orden en Barcelona");
+  assert(chargerOrders.length === 1, "Se esperaba 1 incidencia para cargador 15");
 
   const selectedOrder = initialWorkOrders[1];
   const suggested = getSuggestedTechnicians(selectedOrder, initialTechnicians);
   assert(suggested.length >= 1, "Debe haber al menos un tecnico sugerido");
 
-  assert(nextOrderStatus("pending") === "assigned", "pending debe pasar a assigned");
-  assert(nextOrderStatus("assigned") === "in_progress", "assigned debe pasar a in_progress");
-  assert(nextOrderStatus("in_progress") === "done", "in_progress debe pasar a done");
+  assert(nextOrderStatus("Nova") === "Assignada", "Nova debe pasar a Assignada");
+  assert(nextOrderStatus("Assignada") === "En curs", "Assignada debe pasar a En curs");
+  assert(nextOrderStatus("En curs") === "Tancada", "En curs debe pasar a Tancada");
 
   assert(
-    initialWorkOrders.every((order) => Number.isFinite(new Date(order.createdAt).getTime())),
-    "Cada OT debe tener createdAt valido",
+    initialWorkOrders.every((order) => Number.isFinite(new Date(order.reported_at).getTime())),
+    "Cada incidencia debe tener reported_at valido",
   );
 
-  const controlReference = new Date("2026-03-26T08:30:00Z");
+  const controlReference = new Date("2024-12-11T08:30:00Z");
   const entriesIn24h = countOrdersInLastHours(initialWorkOrders, 24, controlReference);
-  assert(entriesIn24h === 3, "Se esperaban 3 tareas entrantes en 24 horas");
+  assert(entriesIn24h === 4, "Se esperaban 4 incidencias entrantes en 24 horas");
 
   console.log("Smoke test OK: logica base operativa valida.");
 }

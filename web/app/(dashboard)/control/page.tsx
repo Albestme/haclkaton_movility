@@ -21,26 +21,15 @@ const statusOptions = [
 type StatusFilter = (typeof statusOptions)[number]["value"];
 
 const statusLabel: Record<WorkOrder["status"], string> = {
-  pending: "Pendiente",
-  assigned: "Asignada",
-  in_progress: "En curso",
-  done: "Completada",
-};
-
-const priorityLabel: Record<WorkOrder["priority"], string> = {
-  correctivo_critico: "Correctivo crítico",
-  correctivo_no_critico: "Correctivo no crítico",
-  mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
-  puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnóstico",
-  high: "Correctivo crítico",
-  medium: "Mantenimiento preventivo programado",
-  low: "Visita de diagnóstico",
+  Nova: "Nova",
+  Assignada: "Assignada",
+  "En curs": "En curs",
+  Tancada: "Tancada",
 };
 
 function getReferenceDate() {
   const latestTimestamp = Math.max(
-    ...initialWorkOrders.map((order) => new Date(order.createdAt).getTime()),
+    ...initialWorkOrders.map((order) => new Date(order.reported_at).getTime()),
   );
 
   return new Date(latestTimestamp);
@@ -56,7 +45,7 @@ export default function ControlPage() {
     const referenceMs = referenceDate.getTime();
 
     return initialWorkOrders.filter((order) => {
-      const createdMs = new Date(order.createdAt).getTime();
+      const createdMs = new Date(order.reported_at).getTime();
       return Number.isFinite(createdMs) && referenceMs - createdMs <= windowMs && referenceMs - createdMs >= 0;
     });
   }, [hours, referenceDate]);
@@ -72,7 +61,7 @@ export default function ControlPage() {
     }
 
     return ordersInWindow.filter((order) =>
-      statusFilter === "done" ? order.status === "done" : order.status !== "done",
+      statusFilter === "done" ? order.status === "Tancada" : order.status !== "Tancada",
     );
   }, [ordersInWindow, statusFilter]);
 
@@ -152,8 +141,8 @@ export default function ControlPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">OT</th>
-                <th className="px-4 py-3">Sitio</th>
+                <th className="px-4 py-3">Incidencia</th>
+                <th className="px-4 py-3">Cargador</th>
                 <th className="px-4 py-3">Entrada</th>
                 <th className="px-4 py-3">Prioridad</th>
                 <th className="px-4 py-3">Estado</th>
@@ -161,11 +150,11 @@ export default function ControlPage() {
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-t border-slate-200">
-                  <td className="px-4 py-3 font-medium">{order.id}</td>
-                  <td className="px-4 py-3">{order.siteName}</td>
-                  <td className="px-4 py-3">{new Date(order.createdAt).toLocaleString("es-ES")}</td>
-                  <td className="px-4 py-3">{priorityLabel[order.priority]}</td>
+                <tr key={order.incidence_id} className="border-t border-slate-200">
+                  <td className="px-4 py-3 font-medium">INC-{order.incidence_id}</td>
+                  <td className="px-4 py-3">{order.charger_id}</td>
+                  <td className="px-4 py-3">{new Date(order.reported_at).toLocaleString("es-ES")}</td>
+                  <td className="px-4 py-3">{order.priority}</td>
                   <td className="px-4 py-3">{statusLabel[order.status]}</td>
                 </tr>
               ))}

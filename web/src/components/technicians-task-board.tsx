@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Technician, TechnicianStatus, WorkOrder, WorkOrderPriority } from "@/src/features/operations/types";
+import { Technician, TechnicianStatus, WorkOrder } from "@/src/features/operations/types";
 
 type TechniciansTaskBoardProps = {
   technicians: Technician[];
@@ -15,26 +15,10 @@ const technicianStatusLabel: Record<TechnicianStatus, string> = {
   offline: "Fuera de línea",
 };
 
-const priorityLabel: Record<WorkOrderPriority, string> = {
-  correctivo_critico: "Correctivo crítico",
-  correctivo_no_critico: "Correctivo no crítico",
-  mantenimiento_preventivo_programado: "Mantenimiento preventivo",
-  puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnóstico",
-  high: "Alta",
-  medium: "Media",
-  low: "Baja",
-};
-
-const priorityBadge: Record<WorkOrderPriority, string> = {
-  correctivo_critico: "bg-red-100 text-red-700",
-  correctivo_no_critico: "bg-orange-100 text-orange-700",
-  mantenimiento_preventivo_programado: "bg-amber-100 text-amber-700",
-  puesta_en_marcha: "bg-blue-100 text-blue-700",
-  visita_diagnostico: "bg-emerald-100 text-emerald-700",
-  high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
-  low: "bg-emerald-100 text-emerald-700",
+const priorityBadge: Record<string, string> = {
+  "Reparaci\u00F3 cr\u00EDtica": "bg-red-100 text-red-700",
+  "Visita de diagnosi": "bg-emerald-100 text-emerald-700",
+  "Manteniment preventiu": "bg-amber-100 text-amber-700",
 };
 
 export default function TechniciansTaskBoard({ technicians, initialOrders }: TechniciansTaskBoardProps) {
@@ -63,18 +47,18 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
 
   function handleDrop(technicianId: string | undefined, event: React.DragEvent<HTMLElement>) {
     event.preventDefault();
-    const orderId = event.dataTransfer.getData("text/plain") || draggingOrderId;
+    const orderId = Number(event.dataTransfer.getData("text/plain") || draggingOrderId);
 
     setDropTarget(null);
     setDraggingOrderId(null);
 
-    if (!orderId) {
+    if (!Number.isFinite(orderId)) {
       return;
     }
 
     setOrders((current) =>
       current.map((order) => {
-        if (order.id !== orderId) {
+        if (order.incidence_id !== orderId) {
           return order;
         }
 
@@ -82,14 +66,14 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
           return {
             ...order,
             technicianId,
-            status: order.status === "pending" ? "assigned" : order.status,
+            status: order.status === "Nova" ? "Assignada" : order.status,
           };
         }
 
         return {
           ...order,
           technicianId: undefined,
-          status: order.status === "assigned" ? "pending" : order.status,
+          status: order.status === "Assignada" ? "Nova" : order.status,
         };
       }),
     );
@@ -105,7 +89,7 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
       localStorage.setItem("technicians_task_board_orders", JSON.stringify(orders));
       setSavedMessage("Selección guardada correctamente");
       setTimeout(() => setSavedMessage(null), 3000);
-    } catch (error) {
+    } catch {
       setSavedMessage("Error al guardar la selección");
       setTimeout(() => setSavedMessage(null), 3000);
     }
@@ -174,7 +158,7 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
                 {assignedOrders.length > 0 ? (
                   assignedOrders.map((order) => (
                     <TaskCard
-                      key={order.id}
+                      key={order.incidence_id}
                       order={order}
                       onDragStart={handleDragStart}
                       onDragEnd={handleDragEnd}
@@ -217,7 +201,7 @@ export default function TechniciansTaskBoard({ technicians, initialOrders }: Tec
           {unassignedOrders.length > 0 ? (
             unassignedOrders.map((order) => (
               <TaskCard
-                key={order.id}
+                key={order.incidence_id}
                 order={order}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
@@ -244,18 +228,18 @@ function TaskCard({ order, onDragStart, onDragEnd }: TaskCardProps) {
   return (
     <div
       draggable
-      onDragStart={(event) => onDragStart(order.id, event)}
+      onDragStart={(event) => onDragStart(String(order.incidence_id), event)}
       onDragEnd={onDragEnd}
       className="cursor-grab rounded-xl border border-slate-200 bg-slate-50 p-3 active:cursor-grabbing"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-slate-800">{order.id}</p>
-        <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${priorityBadge[order.priority]}`}>
-          {priorityLabel[order.priority]}
+        <p className="text-sm font-semibold text-slate-800">INC-{order.incidence_id}</p>
+        <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${priorityBadge[order.priority] ?? "bg-slate-100 text-slate-700"}`}>
+          {order.priority}
         </span>
       </div>
-      <p className="mt-1 text-sm text-slate-700">{order.siteName}</p>
-      <p className="mt-1 text-xs text-slate-500">{order.city} - {order.scheduledAt}</p>
+      <p className="mt-1 text-sm text-slate-700">Cargador {order.charger_id}</p>
+      <p className="mt-1 text-xs text-slate-500">Est.: {order.estimated_duration_min} min</p>
     </div>
   );
 }

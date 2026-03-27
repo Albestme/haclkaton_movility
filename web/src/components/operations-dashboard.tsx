@@ -20,7 +20,7 @@ import {
 } from "@/src/features/operations/types";
 
 const defaultFilters: OrderFilters = {
-  city: "all",
+  charger: "all",
   priority: "all",
   status: "all",
   search: "",
@@ -34,32 +34,16 @@ const technicianStatusLabel: Record<TechnicianStatus, string> = {
 };
 
 const orderStatusLabel: Record<WorkOrder["status"], string> = {
-  pending: "Pendiente",
-  assigned: "Asignada",
-  in_progress: "En curso",
-  done: "Completada",
+  Nova: "Nova",
+  Assignada: "Assignada",
+  "En curs": "En curs",
+  Tancada: "Tancada",
 };
 
-const priorityLabel = {
-  correctivo_critico: "Correctivo crítico",
-  correctivo_no_critico: "Correctivo no crítico",
-  mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
-  puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnóstico",
-  high: "Correctivo crítico",
-  medium: "Mantenimiento preventivo programado",
-  low: "Visita de diagnóstico",
-} as const;
-
 const priorityColor = {
-  correctivo_critico: "text-red-600",
-  correctivo_no_critico: "text-orange-600",
-  mantenimiento_preventivo_programado: "text-amber-600",
-  puesta_en_marcha: "text-blue-600",
-  visita_diagnostico: "text-emerald-600",
-  high: "text-red-600",
-  medium: "text-amber-600",
-  low: "text-emerald-600",
+  "Reparaci\u00F3 cr\u00EDtica": "text-red-600",
+  "Visita de diagnosi": "text-emerald-600",
+  "Manteniment preventiu": "text-amber-600",
 } as const;
 
 const TechniciansMap = dynamic(() => import("@/src/components/technicians-map"), {
@@ -75,11 +59,11 @@ export default function OperationsDashboard() {
   const [technicians, setTechnicians] = useState<Technician[]>(initialTechnicians);
   const [orders, setOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [filters, setFilters] = useState<OrderFilters>(defaultFilters);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>(initialWorkOrders[0]?.id ?? "");
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(initialWorkOrders[0]?.incidence_id ?? null);
 
   const filteredOrders = useMemo(() => filterOrders(orders, filters), [orders, filters]);
   const selectedOrder = useMemo(
-    () => orders.find((order) => order.id === selectedOrderId) ?? null,
+    () => orders.find((order) => order.incidence_id === selectedOrderId) ?? null,
     [orders, selectedOrderId],
   );
 
@@ -91,16 +75,18 @@ export default function OperationsDashboard() {
   }, [selectedOrder, technicians]);
 
   const metrics = useMemo(() => buildDashboardMetrics(technicians, orders), [technicians, orders]);
-  const cities = useMemo(() => ["all", ...new Set(orders.map((order) => order.city))], [orders]);
+  const chargers = useMemo(() => ["all", ...new Set(orders.map((order) => String(order.charger_id)))], [orders]);
+  const priorities = useMemo(() => ["all", ...new Set(orders.map((order) => order.priority))], [orders]);
+  const statuses = useMemo(() => ["all", ...new Set(orders.map((order) => order.status))], [orders]);
 
-  function assignOrder(orderId: string, technicianId: string) {
+  function assignOrder(orderId: number, technicianId: string) {
     setOrders((current) =>
       current.map((order) =>
-        order.id === orderId
+        order.incidence_id === orderId
           ? {
               ...order,
               technicianId,
-              status: order.status === "pending" ? "assigned" : order.status,
+              status: order.status === "Nova" ? "Assignada" : order.status,
             }
           : order,
       ),
@@ -119,10 +105,10 @@ export default function OperationsDashboard() {
     );
   }
 
-  function advanceOrder(orderId: string) {
+  function advanceOrder(orderId: number) {
     setOrders((current) =>
       current.map((order) =>
-        order.id === orderId
+        order.incidence_id === orderId
           ? {
               ...order,
               status: nextOrderStatus(order.status),
@@ -160,15 +146,15 @@ export default function OperationsDashboard() {
         </header>
 
         <section className="grid gap-4 md:grid-cols-4">
-          <MetricCard label="OT abiertas" value={metrics.openOrders} />
-          <MetricCard label="OT en curso" value={metrics.inProgressOrders} />
-          <MetricCard label="OT completadas" value={metrics.completedOrders} />
+          <MetricCard label="Incidencias abiertas" value={metrics.openOrders} />
+          <MetricCard label="Incidencias en curso" value={metrics.inProgressOrders} />
+          <MetricCard label="Incidencias cerradas" value={metrics.completedOrders} />
           <MetricCard label="Técnicos disponibles" value={metrics.availableTechnicians} />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
           <div className="space-y-4 rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Órdenes de trabajo</h2>
+            <h2 className="text-lg font-semibold">Incidencias</h2>
 
             <div className="grid gap-3 md:grid-cols-4">
               <input
@@ -180,22 +166,22 @@ export default function OperationsDashboard() {
                   }))
                 }
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="Buscar OT, ubicación o nota"
+                placeholder="Buscar incidencia, cargador o descripción"
               />
 
               <select
-                value={filters.city}
+                value={filters.charger}
                 onChange={(event) =>
                   setFilters((current) => ({
                     ...current,
-                    city: event.target.value,
+                    charger: event.target.value,
                   }))
                 }
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
               >
-                {cities.map((city) => (
-                  <option key={city} value={city}>
-                    {city === "all" ? "Todas las ciudades" : city}
+                {chargers.map((charger) => (
+                  <option key={charger} value={charger}>
+                    {charger === "all" ? "Todos los cargadores" : `Cargador ${charger}`}
                   </option>
                 ))}
               </select>
@@ -211,11 +197,11 @@ export default function OperationsDashboard() {
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
               >
                 <option value="all">Todas las prioridades</option>
-                <option value="correctivo_critico">Correctivo crítico</option>
-                <option value="correctivo_no_critico">Correctivo no crítico</option>
-                <option value="mantenimiento_preventivo_programado">Mantenimiento preventivo programado</option>
-                <option value="puesta_en_marcha">Puesta en marcha</option>
-                <option value="visita_diagnostico">Visita de diagnóstico</option>
+                {priorities.filter((priority) => priority !== "all").map((priority) => (
+                  <option key={priority} value={priority}>
+                    {priority}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -229,10 +215,11 @@ export default function OperationsDashboard() {
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
               >
                 <option value="all">Todos los estados</option>
-                <option value="pending">Pendiente</option>
-                <option value="assigned">Asignada</option>
-                <option value="in_progress">En curso</option>
-                <option value="done">Completada</option>
+                {statuses.filter((status) => status !== "all").map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -240,8 +227,8 @@ export default function OperationsDashboard() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-3 py-3">OT</th>
-                    <th className="px-3 py-3">Sitio</th>
+                    <th className="px-3 py-3">Incidencia</th>
+                    <th className="px-3 py-3">Cargador</th>
                     <th className="px-3 py-3">Prioridad</th>
                     <th className="px-3 py-3">Estado</th>
                     <th className="px-3 py-3">Técnico</th>
@@ -250,23 +237,23 @@ export default function OperationsDashboard() {
                 <tbody>
                   {filteredOrders.map((order) => {
                     const assignedTech = technicians.find((technician) => technician.id === order.technicianId);
-                    const isSelected = selectedOrderId === order.id;
+                    const isSelected = selectedOrderId === order.incidence_id;
 
                     return (
                       <tr
-                        key={order.id}
-                        onClick={() => setSelectedOrderId(order.id)}
+                        key={order.incidence_id}
+                        onClick={() => setSelectedOrderId(order.incidence_id)}
                         className={`cursor-pointer border-t border-slate-200 ${
                           isSelected ? "bg-sky-50" : "hover:bg-slate-50"
                         }`}
                       >
-                        <td className="px-3 py-3 font-medium">{order.id}</td>
+                        <td className="px-3 py-3 font-medium">INC-{order.incidence_id}</td>
                         <td className="px-3 py-3">
-                          <p>{order.siteName}</p>
-                          <p className="text-xs text-slate-500">{order.city}</p>
+                          <p>Cargador {order.charger_id}</p>
+                          <p className="text-xs text-slate-500">{new Date(order.reported_at).toLocaleString("es-ES")}</p>
                         </td>
-                        <td className={`px-3 py-3 font-semibold ${priorityColor[order.priority]}`}>
-                          {priorityLabel[order.priority]}
+                        <td className={`px-3 py-3 font-semibold ${priorityColor[order.priority as keyof typeof priorityColor] ?? "text-slate-700"}`}>
+                          {order.priority}
                         </td>
                         <td className="px-3 py-3">{orderStatusLabel[order.status]}</td>
                         <td className="px-3 py-3">{assignedTech?.name ?? "Sin asignar"}</td>
@@ -288,27 +275,34 @@ export default function OperationsDashboard() {
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm">
-              <h3 className="mb-3 text-lg font-semibold">Detalle de orden</h3>
+              <h3 className="mb-3 text-lg font-semibold">Detalle de incidencia</h3>
               {selectedOrder ? (
                 <div className="space-y-3 text-sm">
                   <p>
-                    <span className="font-semibold">Sitio:</span> {selectedOrder.siteName}
+                    <span className="font-semibold">Incidencia:</span> INC-{selectedOrder.incidence_id}
                   </p>
                   <p>
-                    <span className="font-semibold">Dirección:</span> {selectedOrder.address}
+                    <span className="font-semibold">Cargador:</span> {selectedOrder.charger_id}
                   </p>
                   <p>
-                    <span className="font-semibold">Conector:</span> {selectedOrder.connectorType}
+                    <span className="font-semibold">Reportada:</span> {new Date(selectedOrder.reported_at).toLocaleString("es-ES")}
                   </p>
                   <p>
-                    <span className="font-semibold">Hora:</span> {selectedOrder.scheduledAt}
+                    <span className="font-semibold">Duración estimada:</span> {selectedOrder.estimated_duration_min} min
                   </p>
                   <p>
-                    <span className="font-semibold">Nota:</span> {selectedOrder.notes}
+                    <span className="font-semibold">Duración final:</span> {selectedOrder.final_duration_min ?? "-"} min
+                  </p>
+                  <p>
+                    <span className="font-semibold">Resuelta:</span>{" "}
+                    {selectedOrder.resolved_at ? new Date(selectedOrder.resolved_at).toLocaleString("es-ES") : "-"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Descripción:</span> {selectedOrder.description}
                   </p>
 
                   <button
-                    onClick={() => advanceOrder(selectedOrder.id)}
+                    onClick={() => advanceOrder(selectedOrder.incidence_id)}
                     className="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
                   >
                     Avanzar estado
@@ -325,12 +319,10 @@ export default function OperationsDashboard() {
                 <div className="space-y-2 text-sm">
                   {suggestedTechnicians.length > 0 ? (
                     suggestedTechnicians.map((technician) => {
-                      const isSkillMatch = technician.skills.includes(selectedOrder.connectorType);
-
                       return (
                         <button
                           key={technician.id}
-                          onClick={() => assignOrder(selectedOrder.id, technician.id)}
+                          onClick={() => assignOrder(selectedOrder.incidence_id, technician.id)}
                           className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left hover:border-sky-300 hover:bg-sky-50"
                         >
                           <span>
@@ -338,7 +330,7 @@ export default function OperationsDashboard() {
                             <span className="block text-xs text-slate-500">{technician.zone}</span>
                           </span>
                           <span className="text-xs font-semibold text-slate-600">
-                            {isSkillMatch ? "Match skill" : "Generalista"}
+                            Disponible
                           </span>
                         </button>
                       );

@@ -3,11 +3,11 @@ import { GeoPoint, TechnicianStatus } from "@/src/features/operations/types";
 import type { TechnicianRoute } from "@/src/components/technicians-routes-map";
 import TechniciansRoutesMapClient from "@/src/components/technicians-routes-map-client";
 
-const orderDestinationById: Record<string, GeoPoint> = {
-  "ot-2026-104": { lat: 41.3936, lng: 2.1937 },
-  "ot-2026-105": { lat: 41.1184, lng: 1.2451 },
-  "ot-2026-106": { lat: 41.1564, lng: 1.1079 },
-  "ot-2026-107": { lat: 41.9972, lng: 2.8093 },
+const orderDestinationById: Record<number, GeoPoint> = {
+  1: { lat: 41.3936, lng: 2.1937 },
+  2: { lat: 41.1184, lng: 1.2451 },
+  3: { lat: 41.1564, lng: 1.1079 },
+  4: { lat: 41.9972, lng: 2.8093 },
 };
 
 const statusLabel: Record<TechnicianStatus, string> = {
@@ -30,8 +30,8 @@ function getAssignedRoutes(): TechnicianRoute[] {
   return initialTechnicians
     .filter((technician) => technician.activeOrderId)
     .map((technician) => {
-      const order = initialWorkOrders.find((item) => item.id === technician.activeOrderId);
-      const destination = order ? orderDestinationById[order.id] : undefined;
+      const order = initialWorkOrders.find((item) => item.incidence_id === technician.activeOrderId);
+      const destination = order ? orderDestinationById[order.incidence_id] : undefined;
 
       if (!order || !destination) {
         return null;
@@ -41,8 +41,8 @@ function getAssignedRoutes(): TechnicianRoute[] {
         technicianId: technician.id,
         technicianName: technician.name,
         status: technician.status,
-        orderId: order.id,
-        orderSiteName: order.siteName,
+        orderId: `INC-${order.incidence_id}`,
+        orderSiteName: `Cargador ${order.charger_id}`,
         path: buildRoutePoints(technician.location, destination),
       };
     })
