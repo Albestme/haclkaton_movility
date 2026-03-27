@@ -5,6 +5,8 @@ from collections import defaultdict
 import csv
 import requests
 import numpy as np
+import subprocess
+import json
 
 # =========================
 # CONFIGURATION PARAMETERS
@@ -13,6 +15,7 @@ import numpy as np
 WORK_START = 8 * 60  # 08:00 = 480 minutes
 EVOLUTION_ITER = 30
 EVOLUTION_SIZE = 18
+TASK_CSV_PATH = "./data/etecnic_nodes_priority.csv"
 
 def default_params():
     return {
@@ -46,6 +49,9 @@ class Task:
         self.service_time = service_time
         self.created_at = created_at  # minutes of day
         self.available = av
+    
+    def to_dict(self):
+        return {"task_id": self.id}
 
 class Worker:
     def __init__(self, id, lat, lon):
@@ -53,6 +59,9 @@ class Worker:
         self.lat = lat
         self.lon = lon
         self.route = []
+    
+    def to_dict(self):
+        return {"worker_id": self.id}
 
 class PolicyModel:
     def __init__(self):
@@ -125,7 +134,7 @@ def osrm_route(a, b):
     url = f"http://router.project-osrm.org/route/v1/driving/{a.lon},{a.lat};{b.lon},{b.lat}?overview=false"
 
     try:
-        response = requests.rate_limited_get(url, timeout=5)
+        response = rate_limited_get(url, timeout=5)
         data = response.json()
 
         if data["code"] != "Ok":
@@ -315,13 +324,14 @@ _CSV_LOADED = False
 
 def load_csv(filename):
     global csv_data, total_lines
+    print(subprocess.check_output(['pwd']).decode().strip())
     with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         csv_data = list(reader)
         total_lines = len(csv_data)
 
 def read_tasks_from_csv(limit=100):
-    if not _CSV_LOADED: load_csv("./data/etecnic_nodes_priority.csv")
+    if not _CSV_LOADED: load_csv(TASK_CSV_PATH)
     global last_row, total_lines
     tasks = []
 
@@ -379,12 +389,8 @@ def generate_workers(n):
     return workers
 
 
-def run_simulation():
+def run_simulation(workers, tasks):
     params = default_params()
-
-    workers = get_workers()
-    tasks = read_tasks_from_csv(25)
-    #tasks = read_tasks_from_csv("tasks.csv", limit=100)
 
     start = time.time()
     solution = monte_carlo_learning(workers, tasks, params)
@@ -417,10 +423,13 @@ def run_simulation():
             pass
         print(f"Final worked time: {(local_time/60):.2f}")
     
+    pending = []
     print("Pending tasks:")
     for task in tasks:
         if task not in done:
+            pending.append(task)
             print(f"\t- Task {task.id} Duration: {task.service_time:.2f} Priority: {task.priority}")
+    solution.update({-999:pending})
 
     ## simulate new task
     #new_task = Task(999, 50, 50, 6, 30)
@@ -429,6 +438,8 @@ def run_simulation():
     export_svg(workers, tasks)
     total_tasks = sum(len(w.route) for w in workers)
     print("Total assigned tasks after reschedule:", total_tasks)
+
+    return solution
 
 # =========================
 # SVG CHECK
@@ -551,7 +562,22 @@ def evolutionary_tuning():
     return population[0]
 
 
+def serialize_solution(solution):
+    return {
+        str(worker_id): [task.to_dict() for task in tasks]
+        for worker_id, tasks in solution.items()
+    }
+
+
+def get_planification(workers, tasks):
+    solution = run_simulation(workers, tasks)
+    return json.dumps(serialize_solution(solution), indent=2)
+
+
 if __name__ == "__main__":
-    run_simulation()
+    workers = get_workers()
+    tasks = read_tasks_from_csv(25)
+    solution = run_simulation(workers, tasks)
+    print(json.dumps(serialize_solution(solution), indent=2))
     #best_params = evolutionary_tuning()
     #print("Best params:", best_params)
