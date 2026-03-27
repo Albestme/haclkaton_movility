@@ -1,15 +1,7 @@
 export type TechnicianStatus = "available" | "on_route" | "working" | "offline";
 
-export type WorkOrderPriority =
-  | "correctivo_critico"
-  | "correctivo_no_critico"
-  | "mantenimiento_preventivo_programado"
-  | "puesta_en_marcha"
-  | "visita_diagnostico"
-  | "high"
-  | "medium"
-  | "low";
-export type WorkOrderStatus = "pending" | "assigned" | "in_progress" | "done";
+export type WorkOrderPriority = string;
+export type WorkOrderStatus = "Nova" | "Assignada" | "En curs" | "Tancada";
 
 export type GeoPoint = {
   lat: number;
@@ -18,26 +10,26 @@ export type GeoPoint = {
 
 export type Technician = {
   id: string;
+  backendId?: number;
   name: string;
   zone: string;
   location: GeoPoint;
   skills: string[];
   status: TechnicianStatus;
-  activeOrderId?: string;
+  activeOrderId?: number;
   lastCheckIn: string;
 };
 
 export type WorkOrder = {
-  id: string;
-  siteName: string;
-  city: string;
-  address: string;
-  createdAt: string;
-  connectorType: string;
+  incidence_id: number;
+  charger_id: number;
+  reported_at: string;
   priority: WorkOrderPriority;
   status: WorkOrderStatus;
-  scheduledAt: string;
-  notes: string;
+  description: string;
+  estimated_duration_min: number;
+  final_duration_min?: number;
+  resolved_at?: string;
   technicianId?: string;
 };
 
@@ -49,7 +41,7 @@ export type DashboardMetrics = {
 };
 
 export type OrderFilters = {
-  city: string;
+  charger: string;
   priority: "all" | WorkOrderPriority;
   status: "all" | WorkOrderStatus;
   search: string;

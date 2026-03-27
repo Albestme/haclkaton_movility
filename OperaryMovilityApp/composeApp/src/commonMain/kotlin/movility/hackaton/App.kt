@@ -26,6 +26,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -70,8 +71,11 @@ private enum class AppTab(val label: String) {
 fun App() {
     AppTheme {
         val uriHandler = LocalUriHandler.current
-        val baseTasks = remember { sampleDailyRoute() }
-        val technicians = remember { sampleTechnicians() }
+        val backendDataSource = remember { BackendDataSource() }
+        var baseTasks by remember { mutableStateOf<List<RouteTask>>(emptyList()) }
+        var technicians by remember { mutableStateOf<List<Technician>>(emptyList()) }
+        var isBackendLoading by remember { mutableStateOf(true) }
+        var backendLoadError by remember { mutableStateOf<String?>(null) }
         var doneTaskIds by rememberSaveable { mutableStateOf(emptyList<String>()) }
         var taskTypeOverrides by rememberSaveable { mutableStateOf(mapOf<String, String>()) }
         var selectedTypeFilterName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -80,6 +84,29 @@ fun App() {
         var selectedTabName by rememberSaveable { mutableStateOf(AppTab.RUTA.name) }
         var activeTaskSession by remember { mutableStateOf<ActiveTaskSession?>(null) }
         var requestedConversationId by rememberSaveable { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(backendDataSource) {
+            isBackendLoading = true
+            runCatching {
+                val loadedTechnicians = backendDataSource.getTechnicians()
+                val routeTechnicianId = loadedTechnicians.firstOrNull()?.backendId
+                val loadedRoute = if (routeTechnicianId != null) {
+                    backendDataSource.getTechnicianRoute(routeTechnicianId)
+                } else {
+                    emptyList()
+                }
+                loadedTechnicians to loadedRoute
+            }.onSuccess { (loadedTechnicians, loadedRoute) ->
+                technicians = loadedTechnicians
+                baseTasks = loadedRoute
+                backendLoadError = null
+            }.onFailure {
+                technicians = sampleTechnicians()
+                baseTasks = sampleDailyRoute()
+                backendLoadError = "No se pudo conectar con el backend. Mostrando datos de respaldo."
+            }
+            isBackendLoading = false
+        }
 
         val selectedTypeFilter = selectedTypeFilterName?.let { name -> TaskType.entries.firstOrNull { it.name == name } }
         val selectedSortOption = TaskSortOption.entries.firstOrNull { it.name == selectedSortOptionName }
@@ -135,6 +162,8 @@ fun App() {
                     AppTab.RUTA -> RouteTabContent(
                         modifier = Modifier.padding(innerPadding),
                         tasks = tasks,
+                        isLoading = isBackendLoading,
+                        loadError = backendLoadError,
                         selectedTypeFilter = selectedTypeFilter,
                         selectedSortOption = selectedSortOption,
                         onTypeFilterChange = { selectedTypeFilterName = it?.name },
@@ -148,7 +177,13 @@ fun App() {
                     AppTab.TECNICOS -> TechniciansTabContent(
                         modifier = Modifier.padding(innerPadding),
                         technicians = technicians,
-                        onCallTechnician = { technician -> uriHandler.openUri(phoneDialUri(technician.phone)) },
+                        isLoading = isBackendLoading,
+                        loadError = backendLoadError,
+                        onCallTechnician = { technician ->
+                            technician.phone
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { uriHandler.openUri(phoneDialUri(it)) }
+                        },
                         onSendMessage = { technician ->
                             requestedConversationId = conversationIdForTechnician(technician)
                             selectedTabName = AppTab.MENSAJES.name
@@ -157,6 +192,9 @@ fun App() {
 
                     AppTab.MENSAJES -> MessagesTabContent(
                         modifier = Modifier.padding(innerPadding),
+                        technicians = technicians,
+                        isLoading = isBackendLoading,
+                        loadError = backendLoadError,
                         selectedConversationIdRequest = requestedConversationId,
                         onConversationRequestConsumed = { requestedConversationId = null },
                     )
@@ -186,6 +224,8 @@ fun App() {
 private fun RouteTabContent(
     modifier: Modifier,
     tasks: List<RouteTask>,
+    isLoading: Boolean,
+    loadError: String?,
     selectedTypeFilter: TaskType?,
     selectedSortOption: TaskSortOption,
     onTypeFilterChange: (TaskType?) -> Unit,
@@ -209,6 +249,38 @@ private fun RouteTabContent(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (isLoading) {
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.widthIn(max = 18.dp))
+                        Text(
+                            text = "Cargando ruta desde backend...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            if (!loadError.isNullOrBlank()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f),
+                        ),
+                    ) {
+                        Text(
+                            text = loadError,
+                            modifier = Modifier.padding(10.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+
             item {
                 HeaderSummary(
                     pendingCount = pendingCount,
@@ -262,6 +334,8 @@ private fun RouteTabContent(
 private fun TechniciansTabContent(
     modifier: Modifier,
     technicians: List<Technician>,
+    isLoading: Boolean,
+    loadError: String?,
     onCallTechnician: (Technician) -> Unit,
     onSendMessage: (Technician) -> Unit,
 ) {
@@ -277,6 +351,32 @@ private fun TechniciansTabContent(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (isLoading) {
+                item {
+                    Text(
+                        text = "Actualizando técnicos...",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            if (!loadError.isNullOrBlank()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f),
+                        ),
+                    ) {
+                        Text(
+                            text = loadError,
+                            modifier = Modifier.padding(10.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+
             item {
                 Text(
                     text = "Ubicación de técnicos",
@@ -321,7 +421,10 @@ private fun TechniciansTabContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { onCallTechnician(technician) }) {
+                            Button(
+                                onClick = { onCallTechnician(technician) },
+                                enabled = !technician.phone.isNullOrBlank(),
+                            ) {
                                 Text("Llamar")
                             }
                             OutlinedButton(onClick = { onSendMessage(technician) }) {
@@ -348,7 +451,7 @@ private fun TechniciansTabContent(
                     Button(onClick = {
                         onCallTechnician(technician)
                         selectedTechnicianByMap = null
-                    }) {
+                    }, enabled = !technician.phone.isNullOrBlank()) {
                         Text("Llamar")
                     }
                 },

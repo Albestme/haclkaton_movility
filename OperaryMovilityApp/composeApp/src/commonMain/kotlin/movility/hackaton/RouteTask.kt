@@ -23,6 +23,29 @@ data class RouteTask(
     val isDone: Boolean = false,
 )
 
+fun taskTypeFromBackendPriority(priority: String?): TaskType {
+    val normalized = priority.orEmpty().trim().lowercase()
+    return when {
+        "cr" in normalized && "no" !in normalized -> TaskType.CORRECTIVO_CRITICO
+        "correct" in normalized && ("no" in normalized || "minor" in normalized) -> TaskType.CORRECTIVO_NO_CRITICO
+        "prevent" in normalized || "mantenimiento" in normalized -> TaskType.MANTENIMIENTO_PREVENTIVO_PROGRAMADO
+        "puesta" in normalized || "marcha" in normalized || "commission" in normalized -> TaskType.PUESTA_EN_MARCHA
+        "diagn" in normalized || "visita" in normalized -> TaskType.VISITA_DE_DIAGNOSTICO
+        else -> TaskType.VISITA_DE_DIAGNOSTICO
+    }
+}
+
+fun scheduledTimeFromIso(isoDateTime: String?): String {
+    val value = isoDateTime.orEmpty()
+    val timePart = when {
+        'T' in value -> value.substringAfter('T', "")
+        ' ' in value -> value.substringAfter(' ', "")
+        else -> ""
+    }
+    if (timePart.isBlank()) return "--:--"
+    return timePart.take(5).takeIf { it.length == 5 && it[2] == ':' } ?: "--:--"
+}
+
 fun filterTasksByType(tasks: List<RouteTask>, selectedType: TaskType?): List<RouteTask> {
     return if (selectedType == null) tasks else tasks.filter { it.type == selectedType }
 }

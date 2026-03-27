@@ -25,7 +25,7 @@ def get_db_connection():
             database='postgres',
             user=DB_USER,
             password=DB_PASSWORD,
-            sslmode='require' # Matched with Satxa's configuration
+            sslmode='require'
         )
         return conn
     except Exception as e:

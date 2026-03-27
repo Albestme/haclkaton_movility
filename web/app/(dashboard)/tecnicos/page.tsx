@@ -1,7 +1,9 @@
 import TechniciansTaskBoard from "@/src/components/technicians-task-board";
-import { initialTechnicians, initialWorkOrders } from "@/src/features/operations/data";
+import { getOperationsSnapshot } from "@/src/features/operations/backend";
 
-export default function TecnicosPage() {
+export default async function TecnicosPage() {
+  const snapshot = await getOperationsSnapshot();
+
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6">
       <header className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
@@ -12,7 +14,7 @@ export default function TecnicosPage() {
         </p>
       </header>
 
-      <TechniciansTaskBoard technicians={initialTechnicians} initialOrders={initialWorkOrders} />
+      <TechniciansTaskBoard technicians={snapshot.technicians} initialOrders={snapshot.workOrders} />
     </main>
   );
 }

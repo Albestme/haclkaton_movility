@@ -62,39 +62,6 @@ data class ChatConversation(
 fun sampleConversations(): List<ChatConversation> {
     return listOf(
         ChatConversation(
-            id = "conv-tec-01",
-            title = "Carlos Rojas",
-            subtitle = "Técnico en campo",
-            lastMessage = "Ya revisé el cargador 2. Te comparto fotos en 5 min.",
-            messages = listOf(
-                ChatMessage("t1", "Carlos", "Estoy en Estación Centro revisando la alarma crítica.", "08:40", false),
-                ChatMessage("t2", "Yo", "Perfecto, cuando termines me mandas estado y repuestos usados.", "08:42", true),
-                ChatMessage("t3", "Carlos", "Ya revisé el cargador 2. Te comparto fotos en 5 min.", "08:45", false),
-            ),
-        ),
-        ChatConversation(
-            id = "conv-tec-02",
-            title = "Luisa Díaz",
-            subtitle = "Técnica en campo",
-            lastMessage = "Voy para la estación norte. Llego en 15 minutos.",
-            messages = listOf(
-                ChatMessage("t4", "Luisa", "Tengo módulo de repuesto disponible.", "09:10", false),
-                ChatMessage("t5", "Yo", "Genial, prioriza la visita de diagnóstico en Parque Norte.", "09:12", true),
-                ChatMessage("t6", "Luisa", "Voy para la estación norte. Llego en 15 minutos.", "09:14", false),
-            ),
-        ),
-        ChatConversation(
-            id = "conv-tec-03",
-            title = "Andrés Mejía",
-            subtitle = "Técnico en campo",
-            lastMessage = "Terminé preventivo. Quedó pendiente ajuste de firmware.",
-            messages = listOf(
-                ChatMessage("t7", "Andrés", "En sitio todo estable después de pruebas.", "10:02", false),
-                ChatMessage("t8", "Yo", "Perfecto, deja evidencia en el informe.", "10:03", true),
-                ChatMessage("t9", "Andrés", "Terminé preventivo. Quedó pendiente ajuste de firmware.", "10:06", false),
-            ),
-        ),
-        ChatConversation(
             id = "conv-operaciones",
             title = "Centro de Operaciones",
             subtitle = "Coordinación de rutas",
@@ -129,6 +96,28 @@ fun sampleConversations(): List<ChatConversation> {
     )
 }
 
+fun conversationsForTechnicians(technicians: List<Technician>): List<ChatConversation> {
+    val technicianConversations = technicians.map { technician ->
+        ChatConversation(
+            id = conversationIdForTechnician(technician),
+            title = technician.name,
+            subtitle = "Técnico en campo",
+            lastMessage = "Estoy en ${technician.address}. Te actualizo en cuanto termine.",
+            messages = listOf(
+                ChatMessage(
+                    id = "${technician.id}-m1",
+                    senderName = technician.name,
+                    text = "Estoy en ${technician.address}. Te actualizo en cuanto termine.",
+                    time = "08:40",
+                    isFromMe = false,
+                ),
+            ),
+        )
+    }
+
+    return technicianConversations + sampleConversations()
+}
+
 fun conversationIdForTechnician(technician: Technician): String {
     return "conv-${technician.id.lowercase()}"
 }
@@ -136,10 +125,13 @@ fun conversationIdForTechnician(technician: Technician): String {
 @Composable
 fun MessagesTabContent(
     modifier: Modifier,
+    technicians: List<Technician>,
+    isLoading: Boolean,
+    loadError: String?,
     selectedConversationIdRequest: String? = null,
     onConversationRequestConsumed: () -> Unit = {},
 ) {
-    val conversations = remember { sampleConversations() }
+    val conversations = remember(technicians) { conversationsForTechnicians(technicians) }
     var selectedConversationId by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(selectedConversationIdRequest) {
         if (selectedConversationIdRequest != null) {
@@ -152,6 +144,8 @@ fun MessagesTabContent(
     if (selectedConversation == null) {
         ConversationListView(
             conversations = conversations,
+            isLoading = isLoading,
+            loadError = loadError,
             onConversationSelected = { selectedConversationId = it.id },
             modifier = modifier,
         )
@@ -167,6 +161,8 @@ fun MessagesTabContent(
 @Composable
 private fun ConversationListView(
     conversations: List<ChatConversation>,
+    isLoading: Boolean,
+    loadError: String?,
     onConversationSelected: (ChatConversation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -191,6 +187,32 @@ private fun ConversationListView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
+
+            if (isLoading) {
+                Text(
+                    text = "Sincronizando conversaciones...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+
+            if (!loadError.isNullOrBlank()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)),
+                ) {
+                    Text(
+                        text = loadError,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
 
             if (conversations.isEmpty()) {
                 Card(

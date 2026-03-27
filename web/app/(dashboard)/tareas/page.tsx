@@ -1,46 +1,29 @@
-import {
-  initialTechnicians,
-  initialWorkOrders,
-} from "@/src/features/operations/data";
+import { getOperationsSnapshot } from "@/src/features/operations/backend";
 import { WorkOrder } from "@/src/features/operations/types";
 
 const statusLabel: Record<WorkOrder["status"], string> = {
-  pending: "Pendiente",
-  assigned: "Asignada",
-  in_progress: "En curso",
-  done: "Completada",
+  Nova: "Nova",
+  Assignada: "Assignada",
+  "En curs": "En curs",
+  Tancada: "Tancada",
 };
 
-const priorityLabel: Record<WorkOrder["priority"], string> = {
-  correctivo_critico: "Correctivo crítico",
-  correctivo_no_critico: "Correctivo no crítico",
-  mantenimiento_preventivo_programado: "Mantenimiento preventivo programado",
-  puesta_en_marcha: "Puesta en marcha",
-  visita_diagnostico: "Visita de diagnóstico",
-  high: "Correctivo crítico",
-  medium: "Mantenimiento preventivo programado",
-  low: "Visita de diagnóstico",
+const priorityClassName: Record<string, string> = {
+  "Reparaci\u00F3 cr\u00EDtica": "text-red-600",
+  "Visita de diagnosi": "text-emerald-600",
+  "Manteniment preventiu": "text-amber-600",
 };
 
-const priorityClassName: Record<WorkOrder["priority"], string> = {
-  correctivo_critico: "text-red-600",
-  correctivo_no_critico: "text-orange-600",
-  mantenimiento_preventivo_programado: "text-amber-600",
-  puesta_en_marcha: "text-blue-600",
-  visita_diagnostico: "text-emerald-600",
-  high: "text-red-600",
-  medium: "text-amber-600",
-  low: "text-emerald-600",
-};
+export default async function TareasPage() {
+  const snapshot = await getOperationsSnapshot();
 
-export default function TareasPage() {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6">
       <header className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Panel de tareas</p>
-        <h1 className="mt-2 text-2xl font-bold md:text-3xl">Todas las tareas del sistema</h1>
+        <h1 className="mt-2 text-2xl font-bold md:text-3xl">Todas las incidencias del sistema</h1>
         <p className="mt-2 text-sm text-slate-600 md:text-base">
-          Vista consolidada de órdenes de trabajo activas para planificar prioridad, estado y asignación.
+          Vista consolidada de incidencias con el formato recibido por JSON.
         </p>
       </header>
 
@@ -48,32 +31,38 @@ export default function TareasPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-3">OT</th>
-              <th className="px-4 py-3">Sitio</th>
-              <th className="px-4 py-3">Ciudad</th>
-              <th className="px-4 py-3">Conector</th>
+              <th className="px-4 py-3">Incidencia</th>
+              <th className="px-4 py-3">Cargador</th>
+              <th className="px-4 py-3">Reportada</th>
               <th className="px-4 py-3">Prioridad</th>
               <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">Descripción</th>
+              <th className="px-4 py-3">Duración est.</th>
+              <th className="px-4 py-3">Duración fin.</th>
+              <th className="px-4 py-3">Resuelta</th>
               <th className="px-4 py-3">Técnico</th>
-              <th className="px-4 py-3">Horario</th>
             </tr>
           </thead>
           <tbody>
-            {initialWorkOrders.map((order) => {
-              const technician = initialTechnicians.find((item) => item.id === order.technicianId);
+            {snapshot.workOrders.map((order) => {
+              const technician = snapshot.technicians.find((item) => item.id === order.technicianId);
 
               return (
-                <tr key={order.id} className="border-t border-slate-200">
-                  <td className="px-4 py-3 font-medium">{order.id}</td>
-                  <td className="px-4 py-3">{order.siteName}</td>
-                  <td className="px-4 py-3">{order.city}</td>
-                  <td className="px-4 py-3">{order.connectorType}</td>
-                  <td className={`px-4 py-3 font-semibold ${priorityClassName[order.priority]}`}>
-                    {priorityLabel[order.priority]}
+                <tr key={order.incidence_id} className="border-t border-slate-200">
+                  <td className="px-4 py-3 font-medium">INC-{order.incidence_id}</td>
+                  <td className="px-4 py-3">{order.charger_id}</td>
+                  <td className="px-4 py-3">{new Date(order.reported_at).toLocaleString("es-ES")}</td>
+                  <td className={`px-4 py-3 font-semibold ${priorityClassName[order.priority] ?? "text-slate-700"}`}>
+                    {order.priority}
                   </td>
                   <td className="px-4 py-3">{statusLabel[order.status]}</td>
+                  <td className="px-4 py-3">{order.description}</td>
+                  <td className="px-4 py-3">{order.estimated_duration_min} min</td>
+                  <td className="px-4 py-3">{order.final_duration_min ?? "-"} min</td>
+                  <td className="px-4 py-3">
+                    {order.resolved_at ? new Date(order.resolved_at).toLocaleString("es-ES") : "-"}
+                  </td>
                   <td className="px-4 py-3">{technician?.name ?? "Sin asignar"}</td>
-                  <td className="px-4 py-3">{order.scheduledAt}</td>
                 </tr>
               );
             })}
